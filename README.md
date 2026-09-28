@@ -26,12 +26,22 @@ npm run dev      # http://127.0.0.1:3847
 
 Один клик: поднимет Next+palace (если ещё не запущены) и откроет Jarvis.
 
-```bash
-npm run shortcut   # один раз: .desktop → меню приложений (+ Desktop, если есть)
-npm run jarvis     # или просто запуск без установки ярлыка
+**Windows (твой рабочий стол):** из локального клона репо один раз:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\launchers\install-windows-shortcut.ps1
 ```
 
-После `npm run shortcut` в меню приложений появится **«Смысл Jarvis»**.  
+Появится ярлык **«Смысл Jarvis»** на Desktop. Дальше — двойной клик.  
+Рекомендуется WSL (полный стек palace+эмбеддер). Подробности: [`launchers/README.md`](launchers/README.md).
+
+**Linux:**
+
+```bash
+npm run shortcut   # один раз: .desktop → меню приложений (+ Desktop)
+npm run jarvis     # запуск без ярлыка
+```
+
 Если собран Tauri (`npm run desktop:build`) — откроется нативное окно; иначе браузер на `/jarvis`.
 
 ### Desktop (Tauri 2)
