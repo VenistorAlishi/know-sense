@@ -9,18 +9,24 @@ export function SiteHeader() {
             Смысл
           </span>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-[var(--muted)] sm:inline">
-            векторная память встреч
+            персональная векторная память
           </span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm text-[var(--ink-soft)]">
-          <Link href="/meetings" className="hover:text-[var(--ink)]">
-            Встречи
-          </Link>
-          <Link href="/people/kirill" className="hover:text-[var(--ink)]">
-            Кирилл
-          </Link>
+        <nav className="flex flex-wrap items-center justify-end gap-3 text-sm text-[var(--ink-soft)] sm:gap-4">
           <Link href="/people" className="hover:text-[var(--ink)]">
             Люди
+          </Link>
+          <Link href="/sources" className="hover:text-[var(--ink)]">
+            Источники
+          </Link>
+          <Link href="/ingest" className="hover:text-[var(--ink)]">
+            Ingest
+          </Link>
+          <Link
+            href="/people/kirill"
+            className="rounded-md bg-[var(--accent)] px-2.5 py-1 font-medium text-[var(--ink)]"
+          >
+            Кирилл
           </Link>
         </nav>
       </div>

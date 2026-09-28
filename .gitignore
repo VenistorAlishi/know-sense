@@ -40,7 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local knowledge store (source meetings may be committed intentionally)
+# local knowledge store and ingested raw sources
 /data/store/knowledge.json
+/data/sources/*
+!/data/sources/.gitkeep
+/data/meetings/*
+!/data/meetings/.gitkeep
 .huggingface
 .cache

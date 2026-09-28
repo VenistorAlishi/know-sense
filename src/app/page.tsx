@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { SearchBox } from "@/components/search-box";
 import { UploadPanel } from "@/components/upload-panel";
-import { loadStore } from "@/lib/store";
+import { listStats } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const store = await loadStore();
-  const kirill = Object.values(store.peopleIndex).find((p) => p.isUser);
-  const latest = store.meetings[0];
+  const { store, self, counts } = await listStats();
+  const closePeople = store.people.filter((p) => p.relationToSelf === "close");
+  const latest = store.sources[0];
 
   return (
     <div className="flex flex-col gap-14">
@@ -22,118 +22,112 @@ export default async function HomePage() {
           }}
         />
         <div className="relative max-w-2xl animate-[fade-up_700ms_ease-out]">
+          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-[var(--wash)]">
+            персональная база
+          </p>
           <p className="mb-4 font-[family-name:var(--font-display)] text-4xl tracking-tight sm:text-5xl">
-            Смысл
+            {self.canonicalName}
           </p>
           <h1 className="text-xl font-medium leading-snug text-[var(--wash)] sm:text-2xl">
-            Векторная база знаний из записей встреч
+            Векторная память обо мне, близких и всём, что я подтягиваю с компа
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-[var(--paper)]/75 sm:text-base">
-            Загрузите анализ встречи — система разложит участников, темы,
-            решения и задачи, найдёт Кирилла и позволит искать по смыслу, а не
-            по ключевым словам.
+            Сначала структура и универсальный ingest. Первый корпус — три
+            большие переписки Telegram: из них соберём контекст о вас и трёх
+            ближайших людях.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#ingest"
+            <Link
+              href="/ingest"
               className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:brightness-110"
             >
-              Загрузить запись 47
-            </a>
-            {kirill ? (
-              <Link
-                href="/people/kirill"
-                className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
-              >
-                Профиль Кирилла
-              </Link>
-            ) : null}
+              Загрузить TG-экспорт
+            </Link>
+            <Link
+              href={`/people/${self.id}`}
+              className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
+            >
+              Мой профиль
+            </Link>
           </div>
         </div>
       </section>
 
-      <section id="ingest" className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="animate-[fade-up_800ms_ease-out]">
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          ["Люди", counts.people],
+          ["Близкие", counts.closePeople],
+          ["Источники", counts.sources],
+          ["Чанки", counts.chunks],
+        ].map(([label, value]) => (
+          <div
+            key={label as string}
+            className="rounded-xl border border-[var(--line)] bg-[var(--paper)]/70 px-4 py-4"
+          >
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+              {label}
+            </p>
+            <p className="mt-1 text-3xl font-semibold text-[var(--ink)]">{value}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
           <h2 className="mb-2 font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
-            Первая запись
+            Ближайшие люди
           </h2>
-          <p className="mb-5 max-w-prose text-sm leading-relaxed text-[var(--muted)]">
-            Нужен файл{" "}
-            <code className="rounded bg-[var(--paper-soft)] px-1.5 py-0.5 text-[var(--ink)]">
-              Анализ встречи — Запись 47.md
-            </code>
-            . Локальный путь Windows в облако не монтируется — прикрепите файл
-            сюда или вставьте текст.
-          </p>
-          <UploadPanel />
+          {closePeople.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">
+              Пока пусто. После загрузки трёх личных TG-чатов здесь появятся
+              три близких контакта.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
+              {closePeople.map((p) => (
+                <li key={p.id} className="py-3">
+                  <Link
+                    href={`/people/${p.id}`}
+                    className="font-medium text-[var(--ink)] hover:text-[var(--accent-deep)]"
+                  >
+                    {p.canonicalName}
+                  </Link>
+                  <p className="text-sm text-[var(--muted)]">
+                    {p.themes.slice(0, 3).join(" · ") || "темы появятся из переписки"}
+                    {" · "}
+                    {p.sourceIds.length} ист.
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        <aside className="space-y-6 rounded-xl border border-[var(--line)] bg-[var(--paper)]/70 p-5 backdrop-blur-sm">
-          <div>
-            <h3 className="text-sm uppercase tracking-[0.14em] text-[var(--muted)]">
-              Состояние базы
-            </h3>
-            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <dt className="text-[var(--muted)]">Встречи</dt>
-                <dd className="text-2xl font-semibold text-[var(--ink)]">
-                  {store.meetings.length}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Люди</dt>
-                <dd className="text-2xl font-semibold text-[var(--ink)]">
-                  {Object.keys(store.peopleIndex).length}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          {latest ? (
-            <div>
-              <h3 className="text-sm uppercase tracking-[0.14em] text-[var(--muted)]">
-                Последняя
-              </h3>
+        <aside className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--paper)]/70 p-5">
+          <h2 className="font-[family-name:var(--font-display)] text-xl">
+            Быстрый ingest
+          </h2>
+          <UploadPanel compact />
+          {latest && (
+            <p className="text-sm text-[var(--ink-soft)]">
+              Последний:{" "}
               <Link
-                href={`/meetings/${latest.id}`}
-                className="mt-2 block font-medium text-[var(--accent-deep)] hover:underline"
+                href={`/sources/${latest.id}`}
+                className="text-[var(--accent-deep)] hover:underline"
               >
                 {latest.title}
               </Link>
-              <p className="mt-1 line-clamp-3 text-sm text-[var(--ink-soft)]">
-                {latest.summary}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--muted)]">
-              База пустая. После загрузки «Записи 47» здесь появится разбор
-              смыслов и профиль Кирилла.
             </p>
-          )}
-
-          {kirill && (
-            <div className="rounded-lg bg-[var(--wash)]/60 p-3">
-              <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
-                Идентифицирован
-              </p>
-              <p className="font-medium text-[var(--ink)]">{kirill.canonicalName}</p>
-              <p className="text-sm text-[var(--ink-soft)]">
-                {kirill.roleHints.length
-                  ? kirill.roleHints.join(" · ")
-                  : "роль уточняется по следующим встречам"}
-              </p>
-            </div>
           )}
         </aside>
       </section>
 
-      <section className="animate-[fade-up_900ms_ease-out]">
+      <section>
         <h2 className="mb-2 font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
           Поиск по смыслу
         </h2>
         <p className="mb-5 text-sm text-[var(--muted)]">
-          Запрос идёт в векторное пространство чанков встреч (локальные
-          эмбеддинги, без внешнего API).
+          Поиск идёт по чанкам всех источников в персональной базе.
         </p>
         <SearchBox />
       </section>

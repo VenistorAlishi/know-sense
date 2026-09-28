@@ -1,83 +1,105 @@
+export type RelationToSelf = "self" | "close" | "other";
+
+export type SourceType =
+  | "telegram_chat"
+  | "meeting"
+  | "note"
+  | "file"
+  | "other";
+
 export type ChunkKind =
+  | "message_window"
   | "summary"
   | "topic"
   | "decision"
   | "action"
   | "speaker"
   | "context"
-  | "raw";
+  | "raw"
+  | "note";
 
-export type MeaningKind =
+export type FactKind =
+  | "identity"
+  | "relationship"
+  | "preference"
+  | "skill"
+  | "event"
+  | "task"
+  | "context"
   | "theme"
   | "decision"
-  | "action"
-  | "risk"
-  | "context"
-  | "identity";
+  | "risk";
 
-export interface MeetingChunk {
+export interface Person {
   id: string;
-  meetingId: string;
-  kind: ChunkKind;
+  canonicalName: string;
+  aliases: string[];
+  isSelf: boolean;
+  relationToSelf: RelationToSelf;
+  bio: string;
+  themes: string[];
+  sourceIds: string[];
+  factIds: string[];
+  telegramIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SourceMeta {
+  chatId?: string | number;
+  chatType?: string;
+  dateRange?: { from?: string; to?: string };
+  messageCount?: number;
+  peerName?: string;
+  originalFilename?: string;
+}
+
+export interface Source {
+  id: string;
+  type: SourceType;
   title: string;
+  path: string;
+  rawRef: string;
+  participants: string[];
+  personIds: string[];
+  ingestedAt: string;
+  meta: SourceMeta;
+  summary: string;
+  chunkIds: string[];
+  factIds: string[];
+}
+
+export interface Chunk {
+  id: string;
+  sourceId: string;
   text: string;
-  speakers: string[];
+  title: string;
+  speaker?: string;
+  timestamp?: string;
+  kind: ChunkKind;
   embedding: number[];
+  personIds: string[];
   createdAt: string;
 }
 
-export interface Meaning {
+export interface Fact {
   id: string;
-  meetingId: string;
-  kind: MeaningKind;
+  personIds: string[];
+  sourceId: string;
+  kind: FactKind;
   title: string;
   detail: string;
-  speakers: string[];
+  evidenceChunkIds: string[];
   confidence: "high" | "medium" | "low";
-  evidence: string[];
-}
-
-export interface PersonMention {
-  name: string;
-  aliases: string[];
-  roleHints: string[];
-  quoteCount: number;
-  actionCount: number;
-  decisionCount: number;
-  themes: string[];
-  snippets: string[];
-  isPrimary?: boolean;
-}
-
-export interface MeetingRecord {
-  id: string;
-  title: string;
-  sourceFile: string;
-  ingestedAt: string;
-  rawText: string;
-  participants: string[];
-  summary: string;
-  topics: string[];
-  decisions: string[];
-  actions: string[];
-  chunks: MeetingChunk[];
-  meanings: Meaning[];
-  people: PersonMention[];
+  createdAt: string;
 }
 
 export interface KnowledgeStore {
-  version: 1;
+  version: 2;
   updatedAt: string;
-  meetings: MeetingRecord[];
-  peopleIndex: Record<
-    string,
-    {
-      canonicalName: string;
-      aliases: string[];
-      meetingIds: string[];
-      roleHints: string[];
-      themes: string[];
-      isUser?: boolean;
-    }
-  >;
+  selfPersonId: string;
+  people: Person[];
+  sources: Source[];
+  chunks: Chunk[];
+  facts: Fact[];
 }

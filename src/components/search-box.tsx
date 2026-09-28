@@ -5,12 +5,12 @@ import { useState } from "react";
 
 type Result = {
   score: number;
-  meetingId: string;
-  meetingTitle: string;
+  sourceId?: string;
+  sourceTitle?: string;
+  sourceType?: string;
   kind: string;
   title: string;
   text: string;
-  speakers: string[];
 };
 
 export function SearchBox() {
@@ -43,7 +43,7 @@ export function SearchBox() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Например: что решили по запуску? роль Кирилла?"
+          placeholder="Например: о чём мы с Аней? какие задачи?"
           className="flex-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-4 py-3 text-[var(--ink)] outline-none ring-[var(--accent)] placeholder:text-[var(--muted)] focus:ring-2"
         />
         <button
@@ -59,7 +59,7 @@ export function SearchBox() {
 
       {results && results.length === 0 && (
         <p className="text-sm text-[var(--muted)]">
-          Ничего не найдено. Загрузите встречу и попробуйте другой запрос.
+          Ничего не найдено. Загрузите Telegram-экспорты или заметки.
         </p>
       )}
 
@@ -67,18 +67,20 @@ export function SearchBox() {
         <ul className="space-y-3">
           {results.map((r, i) => (
             <li
-              key={`${r.meetingId}-${i}`}
+              key={`${r.sourceId}-${i}`}
               className="border-b border-[var(--line)] pb-3 last:border-0"
             >
               <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
                 <span className="uppercase tracking-wide">{r.kind}</span>
                 <span>score {r.score.toFixed(3)}</span>
-                <Link
-                  href={`/meetings/${r.meetingId}`}
-                  className="text-[var(--accent-deep)] underline-offset-2 hover:underline"
-                >
-                  {r.meetingTitle}
-                </Link>
+                {r.sourceId && (
+                  <Link
+                    href={`/sources/${r.sourceId}`}
+                    className="text-[var(--accent-deep)] underline-offset-2 hover:underline"
+                  >
+                    {r.sourceTitle}
+                  </Link>
+                )}
               </div>
               <p className="font-medium text-[var(--ink)]">{r.title}</p>
               <p className="mt-1 text-sm leading-relaxed text-[var(--ink-soft)]">

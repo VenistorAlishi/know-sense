@@ -1,6 +1,7 @@
-# Смысл — векторная база знаний встреч
+# Смысл — персональная векторная база знаний
 
-Локальное веб-приложение: загружаете markdown-разбор встречи, система режет его на чанки, строит эмбеддинги, выделяет смыслы (темы / решения / задачи / риски / идентичность) и собирает профили людей. **Кирилл** распознаётся как основной пользователь базы.
+Одна база **про Кирилла**: люди, источники, чанки с эмбеддингами и факты.  
+Встречи, Telegram-чаты, заметки и файлы — только источники вокруг человека.
 
 ## Запуск
 
@@ -11,38 +12,51 @@ npm run dev
 
 Откройте [http://127.0.0.1:3847](http://127.0.0.1:3847).
 
-## Загрузка встречи
+## Модель (v2)
 
-1. Через UI на главной — файл `.md` или вставка текста.
-2. Через API:
+- **Person** — Кирилл (`isSelf`) + близкие (`close`) + остальные
+- **Source** — `telegram_chat` | `meeting` | `note` | `file` | `other`
+- **Chunk** — текстовое окно + 384-d локальный эмбеддинг
+- **Fact** — эвристически извлечённые смыслы (связь, тема, задача, …)
+
+Хранилище: `data/store/knowledge.json`, сырьё: `data/sources/`.
+
+## Telegram → первый корпус
+
+1. Telegram Desktop → Settings → Advanced → **Export chat history**
+2. Формат: **Machine-readable JSON**
+3. Возьмите три самые большие личные переписки (`result.json`)
+4. Загрузите через [/ingest](http://127.0.0.1:3847/ingest) или CLI:
 
 ```bash
+npm run ingest -- --type telegram ./exports/chat1/result.json ./exports/chat2/result.json ./exports/chat3/result.json
+```
+
+Peer каждого личного чата помечается как **близкий контакт**.
+
+## API
+
+```bash
+# статус
+curl http://127.0.0.1:3847/api/ingest
+
+# загрузка
 curl -X POST http://127.0.0.1:3847/api/ingest \
   -H 'Content-Type: application/json' \
-  -d @- <<'EOF'
-{"filename":"Анализ встречи — Запись 47.md","text":"..."}
-EOF
+  -d '{"type":"telegram_chat","filename":"result.json","text":"..."}'
+
+# поиск
+curl 'http://127.0.0.1:3847/api/search?q=какие%20задачи'
+
+# люди / источники
+curl http://127.0.0.1:3847/api/people
+curl http://127.0.0.1:3847/api/sources
 ```
 
-3. Через CLI (сервер должен быть запущен):
+## Структура кода
 
-```bash
-npm run ingest -- "./data/meetings/Анализ встречи — Запись 47.md"
-```
-
-## Поиск
-
-```bash
-curl 'http://127.0.0.1:3847/api/search?q=что%20решили'
-```
-
-## Как устроено
-
-- Парсер markdown (`src/lib/meeting-parser.ts`) — секции участников, резюме, тем, решений, задач и реплик.
-- Анализ (`src/lib/analyze.ts`) — карта смыслов + профиль Кирилла по алиасам `Кирилл` / `Kirill`.
-- Эмбеддинги (`src/lib/embeddings.ts`) — локальные 384-d векторы (hashing n-gram), без внешнего API.
-- Хранилище — `data/store/knowledge.json` + исходники в `data/meetings/`.
-
-## Важно про «Запись 47»
-
-Путь `C:\Users\KIRILL\Downloads\Анализ встречи — Запись 47.md` с вашей машины в облачную среду не попадает. Прикрепите файл в чат или загрузите через UI/API — после этого появится полный разбор и идентификация Кирилла.
+- `src/lib/types.ts` — схема v2
+- `src/lib/bootstrap.ts` — Person «Кирилл» при пустой базе
+- `src/lib/store.ts` — persistence + search
+- `src/lib/ingest/` — universal ingest + Telegram/meeting/text адаптеры
+- UI: `/` хаб, `/people`, `/sources`, `/ingest`

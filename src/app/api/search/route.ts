@@ -15,12 +15,15 @@ export async function GET(request: Request) {
     query: q,
     results: results.map((r) => ({
       score: Number(r.score.toFixed(4)),
-      meetingId: r.meetingId,
-      meetingTitle: r.meetingTitle,
+      sourceId: r.source?.id,
+      sourceTitle: r.source?.title,
+      sourceType: r.source?.type,
       kind: r.chunk.kind,
       title: r.chunk.title,
       text: r.chunk.text,
-      speakers: r.chunk.speakers,
+      speaker: r.chunk.speaker,
+      timestamp: r.chunk.timestamp,
+      personIds: r.chunk.personIds,
     })),
   });
 }
@@ -32,5 +35,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "query обязателен" }, { status: 400 });
   }
   const results = await searchKnowledge(q, Number(body.limit) || 8);
-  return NextResponse.json({ query: q, results });
+  return NextResponse.json({
+    query: q,
+    results: results.map((r) => ({
+      score: Number(r.score.toFixed(4)),
+      sourceId: r.source?.id,
+      sourceTitle: r.source?.title,
+      sourceType: r.source?.type,
+      kind: r.chunk.kind,
+      title: r.chunk.title,
+      text: r.chunk.text,
+      speaker: r.chunk.speaker,
+      personIds: r.chunk.personIds,
+    })),
+  });
 }

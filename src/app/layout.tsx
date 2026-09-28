@@ -16,9 +16,9 @@ const body = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Смысл — векторная база знаний встреч",
+  title: "Смысл — персональная векторная база",
   description:
-    "Загружайте разборы встреч, выделяйте роли людей и ищите по смыслу.",
+    "База знаний о Кирилле: люди, Telegram, встречи, заметки и поиск по смыслу.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
