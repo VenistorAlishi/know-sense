@@ -61,6 +61,7 @@ export async function palaceHealth() {
     ok: boolean;
     palaceDir: string;
     drawers: number;
+    embeddingModel?: string;
     error?: string | null;
   }>("/health");
 }

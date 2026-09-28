@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -48,6 +49,8 @@ next-env.d.ts
 !/data/meetings/.gitkeep
 /data/palace/**
 !/data/palace/.gitkeep
+# Large ONNX weights (downloaded by scripts/ensure-embeddinggemma.sh)
+/data/palace/models/
 /services/palace/.venv/
 .huggingface
 .cache

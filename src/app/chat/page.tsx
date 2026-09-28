@@ -14,14 +14,15 @@ export default async function ChatPage() {
           Чат с памятью
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Retrieval из MemPalace (+ локальный store). С{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">OPENAI_API_KEY</code>{" "}
-          — синтез; без ключа — extractive цитаты.
+          Retrieval из MemPalace (+ локальный store). Локально:{" "}
+          <code className="rounded bg-[var(--paper-soft)] px-1">ollama pull qwen3.5:9b</code>{" "}
+          или <code className="rounded bg-[var(--paper-soft)] px-1">npm run setup:ai</code>.
+          Без LLM — extractive цитаты.
         </p>
         <p className="mt-2 text-xs text-[var(--muted)]">
           Palace:{" "}
           {palaceOk
-            ? `ok · ${health.data.drawers} drawers`
+            ? `ok · ${health.data.drawers} drawers · ${health.data.embeddingModel || "embeddings"}`
             : `offline (${health.ok ? health.data.error || "down" : health.error})`}
         </p>
       </div>

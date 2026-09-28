@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveLlmConfig } from "@/lib/llm";
 import { palaceHealth, palaceSearch, type PalaceHit } from "@/lib/palace";
 import { searchKnowledge } from "@/lib/store";
 
@@ -10,26 +11,6 @@ type ChatCitation = {
   source: string;
   wing?: string | null;
 };
-
-function llmConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY || process.env.LLM_API_KEY);
-}
-
-function llmBaseUrl(): string {
-  return (
-    process.env.LLM_BASE_URL ||
-    process.env.OPENAI_BASE_URL ||
-    "https://api.openai.com/v1"
-  ).replace(/\/$/, "");
-}
-
-function llmModel(): string {
-  return process.env.LLM_MODEL || process.env.OPENAI_MODEL || "gpt-4o-mini";
-}
-
-function llmApiKey(): string | undefined {
-  return process.env.OPENAI_API_KEY || process.env.LLM_API_KEY;
-}
 
 function extractiveAnswer(message: string, citations: ChatCitation[]): string {
   if (!citations.length) {
@@ -50,13 +31,14 @@ function extractiveAnswer(message: string, citations: ChatCitation[]): string {
     "Ключевые цитаты:",
     ...lines,
     "",
-    "Режим: extractive (без LLM). Добавьте OPENAI_API_KEY или LLM_BASE_URL для синтезированного ответа.",
+    "Режим: extractive (без LLM). Запустите Ollama (`ollama pull qwen3.5:9b`) или задайте OPENAI_API_KEY.",
   ].join("\n");
 }
 
 async function llmAnswer(
   message: string,
   citations: ChatCitation[],
+  cfg: Awaited<ReturnType<typeof resolveLlmConfig>>,
 ): Promise<string> {
   const context = citations
     .slice(0, 8)
@@ -74,14 +56,14 @@ async function llmAnswer(
     "В конце перечисли номера цитат, на которые опираешься.",
   ].join(" ");
 
-  const res = await fetch(`${llmBaseUrl()}/chat/completions`, {
+  const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${llmApiKey()}`,
+      Authorization: `Bearer ${cfg.apiKey || "ollama"}`,
     },
     body: JSON.stringify({
-      model: llmModel(),
+      model: cfg.model,
       temperature: 0.2,
       messages: [
         { role: "system", content: system },
@@ -135,7 +117,6 @@ async function gatherCitations(
     }
   }
 
-  // Fallback / complement from local JSON store
   if (citations.length < 4) {
     const local = await searchKnowledge(message, 6);
     for (const hit of local) {
@@ -161,7 +142,11 @@ async function gatherCitations(
   return {
     citations: deduped.slice(0, 8),
     palaceOk: Boolean(palaceOk),
-    warning: palaceOk ? undefined : health.ok === false ? health.error : health.data?.error || "palace unavailable",
+    warning: palaceOk
+      ? undefined
+      : health.ok === false
+        ? health.error
+        : health.data?.error || "palace unavailable",
   };
 }
 
@@ -175,18 +160,22 @@ export async function POST(request: Request) {
     }
 
     const gathered = await gatherCitations(message, wing);
+    const llm = await resolveLlmConfig();
     let mode: "llm" | "extractive" = "extractive";
     let answer: string;
+    let provider: string = "none";
 
-    if (llmConfigured()) {
+    if (llm.configured) {
       try {
-        answer = await llmAnswer(message, gathered.citations);
+        answer = await llmAnswer(message, gathered.citations, llm);
         mode = "llm";
+        provider = llm.provider;
       } catch (error) {
         answer =
           extractiveAnswer(message, gathered.citations) +
           `\n\n(LLM недоступен: ${String(error)})`;
         mode = "extractive";
+        provider = llm.provider;
       }
     } else {
       answer = extractiveAnswer(message, gathered.citations);
@@ -196,6 +185,8 @@ export async function POST(request: Request) {
       answer,
       citations: gathered.citations,
       mode,
+      provider,
+      model: llm.configured ? llm.model : null,
       palaceOk: gathered.palaceOk,
       warning: gathered.warning,
     });
@@ -210,9 +201,14 @@ export async function POST(request: Request) {
 
 export async function GET() {
   const health = await palaceHealth();
+  const llm = await resolveLlmConfig();
   return NextResponse.json({
-    llm: llmConfigured(),
-    model: llmConfigured() ? llmModel() : null,
+    llm: {
+      configured: llm.configured,
+      provider: llm.provider,
+      model: llm.configured ? llm.model : null,
+      baseUrl: llm.configured ? llm.baseUrl : null,
+    },
     palace: health.ok ? health.data : { ok: false, error: health.error },
   });
 }

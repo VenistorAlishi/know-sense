@@ -165,6 +165,7 @@ def _startup() -> None:
 @app.get("/health")
 def health() -> dict[str, Any]:
     err = getattr(app.state, "startup_error", None)
+    embedding_model = os.environ.get("MEMPALACE_EMBEDDING_MODEL", "embeddinggemma")
     try:
         ensure_palace()
         drawers = 0
@@ -177,6 +178,7 @@ def health() -> dict[str, Any]:
             "palaceDir": str(PALACE_DIR),
             "inboxDir": str(INBOX_DIR),
             "drawers": drawers,
+            "embeddingModel": embedding_model,
             "error": err,
         }
     except Exception as exc:  # noqa: BLE001
@@ -185,6 +187,7 @@ def health() -> dict[str, Any]:
             "palaceDir": str(PALACE_DIR),
             "inboxDir": str(INBOX_DIR),
             "drawers": 0,
+            "embeddingModel": embedding_model,
             "error": str(exc),
         }
 
