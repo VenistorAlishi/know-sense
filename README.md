@@ -22,6 +22,18 @@ npm run dev      # http://127.0.0.1:3847
 
 Откройте [Jarvis](http://127.0.0.1:3847/jarvis) (карта памяти + command bar), [главную](http://127.0.0.1:3847) или [чат](http://127.0.0.1:3847/chat).
 
+### Ярлык запуска
+
+Один клик: поднимет Next+palace (если ещё не запущены) и откроет Jarvis.
+
+```bash
+npm run shortcut   # один раз: .desktop → меню приложений (+ Desktop, если есть)
+npm run jarvis     # или просто запуск без установки ярлыка
+```
+
+После `npm run shortcut` в меню приложений появится **«Смысл Jarvis»**.  
+Если собран Tauri (`npm run desktop:build`) — откроется нативное окно; иначе браузер на `/jarvis`.
+
 ### Desktop (Tauri 2)
 
 ```bash
