@@ -1,23 +1,20 @@
 #Requires -Version 5.1
-<#
-  Puts "Смысл Jarvis.lnk" on YOUR Windows Desktop.
-  Run once from a local clone of this repo (PowerShell):
-
-    powershell -ExecutionPolicy Bypass -File .\launchers\install-windows-shortcut.ps1
-#>
+# ASCII-only script body so Windows PowerShell 5.1 does not choke on UTF-8 Cyrillic.
+# Puts "Smysl Jarvis.lnk" on the current user's Desktop.
+#
+#   powershell -ExecutionPolicy Bypass -File .\launchers\install-windows-shortcut.ps1
 $ErrorActionPreference = "Stop"
 
 $Launchers = $PSScriptRoot
 $Root = (Resolve-Path (Join-Path $Launchers "..")).Path
-$Vbs = Join-Path $Launchers "Запуск Смысл.vbs"
-$Bat = Join-Path $Launchers "Запуск Смысл.bat"
+$Vbs = Join-Path $Launchers "start-smysl.vbs"
+$Bat = Join-Path $Launchers "start-smysl.bat"
 $IconPng = Join-Path $Root "desktop\src-tauri\icons\128x128.png"
 $IconIco = Join-Path $Launchers "smysl-jarvis.ico"
 
 if (-not (Test-Path $Vbs)) { throw "Missing: $Vbs" }
 if (-not (Test-Path $Bat)) { throw "Missing: $Bat" }
 
-# Build a simple .ico from PNG if possible (optional)
 if ((Test-Path $IconPng) -and -not (Test-Path $IconIco)) {
   try {
     Add-Type -AssemblyName System.Drawing
@@ -37,7 +34,7 @@ if ((Test-Path $IconPng) -and -not (Test-Path $IconIco)) {
 }
 
 $Desktop = [Environment]::GetFolderPath("Desktop")
-$LnkPath = Join-Path $Desktop "Смысл Jarvis.lnk"
+$LnkPath = Join-Path $Desktop "Smysl Jarvis.lnk"
 
 $Wsh = New-Object -ComObject WScript.Shell
 $Sc = $Wsh.CreateShortcut($LnkPath)
@@ -45,15 +42,14 @@ $Sc.TargetPath = "$env:SystemRoot\System32\wscript.exe"
 $Sc.Arguments = "`"$Vbs`""
 $Sc.WorkingDirectory = $Root
 $Sc.WindowStyle = 7
-$Sc.Description = "Смысл — Jarvis: Next + MemPalace + чат"
+$Sc.Description = "Smysl Jarvis - Next + MemPalace + chat"
 if (Test-Path $IconIco) {
   $Sc.IconLocation = "$IconIco,0"
 } elseif (Test-Path $IconPng) {
-  # Explorer can use png on newer Windows; otherwise default
   $Sc.IconLocation = "$IconPng,0"
 }
 $Sc.Save()
 
 Write-Host "OK: $LnkPath"
-Write-Host "Double-click the Desktop shortcut to start Смысл locally."
-Write-Host "Tip: WSL recommended (palace + embeddings). Without WSL, Next-only mode may start."
+Write-Host "Double-click Desktop shortcut, or from WSL: npm run jarvis"
+Write-Host "Then open http://127.0.0.1:3847/jarvis in Windows browser"
