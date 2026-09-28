@@ -51,6 +51,8 @@ next-env.d.ts
 !/data/palace/.gitkeep
 # Large ONNX weights (downloaded by scripts/ensure-embeddinggemma.sh)
 /data/palace/models/
+/data/hallways.json
+/data/tunnels.json
 /services/palace/.venv/
 .huggingface
 .cache
