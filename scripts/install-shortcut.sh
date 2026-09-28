@@ -29,18 +29,21 @@ EOF
 
 chmod +x "$DESKTOP_FILE"
 
-# Also drop on Desktop if that folder exists
-for desk in "$HOME/Desktop" "$HOME/Рабочий стол" "$(xdg-user-dir DESKTOP 2>/dev/null || true)"; do
-  if [[ -n "$desk" && -d "$desk" ]]; then
-    cp -f "$DESKTOP_FILE" "$desk/smysl-jarvis.desktop"
-    chmod +x "$desk/smysl-jarvis.desktop"
-    # Mark trusted on GNOME/Ubuntu when possible
-    if command -v gio >/dev/null 2>&1; then
-      gio set "$desk/smysl-jarvis.desktop" metadata::trusted true 2>/dev/null || true
-    fi
-    echo "Desktop shortcut: $desk/smysl-jarvis.desktop"
-  fi
-done
+# Place on Desktop (create folder if missing)
+DESK="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+if [[ -z "$DESK" || "$DESK" == "$HOME" ]]; then
+  DESK="$HOME/Desktop"
+fi
+mkdir -p "$DESK"
+cp -f "$DESKTOP_FILE" "$DESK/Смысл Jarvis.desktop"
+chmod +x "$DESK/Смысл Jarvis.desktop"
+# Mark trusted so GNOME/XFCE allow double-click without "Untrusted" dialog
+if command -v gio >/dev/null 2>&1; then
+  gio set "$DESK/Смысл Jarvis.desktop" metadata::trusted true 2>/dev/null || true
+fi
+# Some DEs also look at executable bit + allow-launch flag
+chmod u+x "$DESK/Смысл Jarvis.desktop"
+echo "Desktop shortcut: $DESK/Смысл Jarvis.desktop"
 
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database "$APP_DIR" 2>/dev/null || true
