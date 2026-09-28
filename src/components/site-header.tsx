@@ -13,6 +13,9 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-3 text-sm text-[var(--ink-soft)] sm:gap-4">
+          <Link href="/chat" className="hover:text-[var(--ink)]">
+            Чат
+          </Link>
           <Link href="/people" className="hover:text-[var(--ink)]">
             Люди
           </Link>

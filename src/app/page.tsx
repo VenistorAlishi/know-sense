@@ -38,8 +38,14 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/ingest"
+              href="/chat"
               className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:brightness-110"
+            >
+              Чат с памятью
+            </Link>
+            <Link
+              href="/ingest"
+              className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
             >
               Загрузить TG-экспорт
             </Link>

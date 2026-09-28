@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         relationToSelf: p.relationToSelf,
         isSelf: p.isSelf,
       })),
+      palace: result.palace ?? null,
     });
   } catch (error) {
     console.error(error);

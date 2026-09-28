@@ -55,6 +55,7 @@ for (const file of files) {
         chunks: data.chunkCount,
         facts: data.factCount,
         people: data.people,
+        palace: data.palace ?? null,
       },
       null,
       2,

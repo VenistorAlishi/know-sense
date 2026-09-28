@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3847 --hostname 127.0.0.1",
+    "dev:all": "bash scripts/dev-all.sh",
+    "palace": "bash services/palace/run.sh",
     "build": "next build",
     "start": "next start --port 3847 --hostname 127.0.0.1",
     "lint": "eslint",

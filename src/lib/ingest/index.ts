@@ -9,6 +9,7 @@ import {
   loadStore,
 } from "../store";
 import type { Person, Source } from "../types";
+import { syncSourceToPalace, type PalaceSyncResult } from "./palace-sync";
 
 export interface IngestInput {
   text: string;
@@ -16,6 +17,7 @@ export interface IngestInput {
   type?: SourceType | "auto";
   title?: string;
   markPeerClose?: boolean;
+  syncPalace?: boolean;
 }
 
 export interface IngestResult {
@@ -23,6 +25,7 @@ export interface IngestResult {
   people: Person[];
   chunkCount: number;
   factCount: number;
+  palace?: PalaceSyncResult;
 }
 
 export async function ingestSource(input: IngestInput): Promise<IngestResult> {
@@ -64,11 +67,21 @@ export async function ingestSource(input: IngestInput): Promise<IngestResult> {
   const source = saved.sources.find((s) => s.id === built.source.id)!;
   const people = saved.people.filter((p) => source.personIds.includes(p.id));
 
+  let palace: PalaceSyncResult | undefined;
+  if (input.syncPalace !== false) {
+    palace = await syncSourceToPalace({
+      source,
+      chunks: built.chunks,
+      people,
+    });
+  }
+
   return {
     source,
     people,
     chunkCount: built.chunks.length,
     factCount: built.facts.length,
+    palace,
   };
 }
 

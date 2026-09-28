@@ -46,5 +46,8 @@ next-env.d.ts
 !/data/sources/.gitkeep
 /data/meetings/*
 !/data/meetings/.gitkeep
+/data/palace/**
+!/data/palace/.gitkeep
+/services/palace/.venv/
 .huggingface
 .cache
