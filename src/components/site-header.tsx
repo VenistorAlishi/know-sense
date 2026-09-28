@@ -13,6 +13,12 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-3 text-sm text-[var(--ink-soft)] sm:gap-4">
+          <Link
+            href="/jarvis"
+            className="rounded-md bg-[var(--ink)] px-2.5 py-1 font-medium text-[var(--wash)] hover:bg-[var(--accent-deep)]"
+          >
+            Jarvis
+          </Link>
           <Link href="/chat" className="hover:text-[var(--ink)]">
             Чат
           </Link>

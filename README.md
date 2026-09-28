@@ -20,7 +20,17 @@ npm run palace   # http://127.0.0.1:3851  (embeddinggemma)
 npm run dev      # http://127.0.0.1:3847
 ```
 
-Откройте [http://127.0.0.1:3847](http://127.0.0.1:3847) и чат [http://127.0.0.1:3847/chat](http://127.0.0.1:3847/chat).
+Откройте [Jarvis](http://127.0.0.1:3847/jarvis) (карта памяти + command bar), [главную](http://127.0.0.1:3847) или [чат](http://127.0.0.1:3847/chat).
+
+### Desktop (Tauri 2)
+
+```bash
+# зависимости ОС (Ubuntu/Debian): webkit2gtk, build-essential, libssl-dev, …
+# Rust: https://rustup.rs
+cd desktop && npm install && cd ..
+npm run dev:all          # в одном терминале — Next + palace
+npm run desktop:dev      # окно «Смысл — Jarvis» → http://127.0.0.1:3847/jarvis
+```
 
 Скопируйте [`.env.example`](.env.example) → `.env.local` при необходимости.
 
@@ -63,7 +73,9 @@ npm run dev      # http://127.0.0.1:3847
 
 Хранилище: `data/store/knowledge.json`, сырьё: `data/sources/`, palace: `data/palace/`.
 
-UI: Inbox на главной, [/open](http://127.0.0.1:3847/open) для открытых задач, чат `state|recall|auto`, [/extract](http://127.0.0.1:3847/extract) для LLM-кандидатов.
+UI: [/jarvis](http://127.0.0.1:3847/jarvis) — command deck + embedding-карта; Inbox на главной; [/open](http://127.0.0.1:3847/open); чат `state|recall|auto`; [/extract](http://127.0.0.1:3847/extract).
+
+Карта: `GET /api/map` — PCA 384→2D по chunk/fact/person embeddings.
 
 ## Telegram → первый корпус
 
@@ -92,6 +104,7 @@ npm run palace
 
 ```bash
 curl http://127.0.0.1:3851/health
+curl http://127.0.0.1:3847/api/map
 curl http://127.0.0.1:3847/api/chat
 curl -X POST http://127.0.0.1:3847/api/chat \
   -H 'Content-Type: application/json' \
@@ -101,9 +114,11 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 ## Структура кода
 
 - `src/lib/types.ts` / `bootstrap.ts` / `store.ts` — персональная БД
+- `src/lib/map-project.ts` + `api/map` — PCA-карта памяти
 - `src/lib/llm.ts` — auto-detect Ollama / OpenAI-compat
 - `src/lib/ingest/` — ingest + `palace-sync.ts`
 - `src/lib/palace.ts` — клиент sidecar
 - `services/palace/` — MemPalace FastAPI bridge
+- `desktop/` — Tauri 2 shell (Jarvis window)
 - `scripts/setup-local-ai.sh` / `remine-palace.sh` / `dev-all.sh`
-- UI: `/`, `/chat`, `/people`, `/sources`, `/ingest`
+- UI: `/jarvis`, `/`, `/chat`, `/open`, `/people`, `/sources`, `/ingest`

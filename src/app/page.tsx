@@ -38,8 +38,14 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/open"
+              href="/jarvis"
               className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:brightness-110"
+            >
+              Jarvis
+            </Link>
+            <Link
+              href="/open"
+              className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
             >
               Открытое
             </Link>
@@ -47,13 +53,7 @@ export default async function HomePage() {
               href="/chat"
               className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
             >
-              Чат с памятью
-            </Link>
-            <Link
-              href="/extract"
-              className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
-            >
-              Extract
+              Чат
             </Link>
           </div>
         </div>
