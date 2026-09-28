@@ -22,7 +22,7 @@ Comment[en]=Personal second brain — memory map and chat
 Exec=$ROOT/scripts/launch-jarvis.sh
 Icon=$ICON_DST
 Terminal=false
-Categories=Office;Utility;Development;
+Categories=Office;
 StartupNotify=true
 Keywords=smysl;jarvis;memory;knowledge;
 EOF
