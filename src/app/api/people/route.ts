@@ -22,7 +22,10 @@ export async function GET(request: Request) {
         ingestedAt: s.ingestedAt,
       })),
       facts: person.facts,
-      recentChunks: person.chunks.map(({ embedding: _e, ...c }) => c),
+      recentChunks: person.chunks.map(({ embedding, ...c }) => {
+        void embedding;
+        return c;
+      }),
     });
   }
 
