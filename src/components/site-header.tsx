@@ -25,6 +25,9 @@ export function SiteHeader() {
           <Link href="/ingest" className="hover:text-[var(--ink)]">
             Ingest
           </Link>
+          <Link href="/settings" className="hover:text-[var(--ink)]">
+            API
+          </Link>
           <Link
             href="/people/kirill"
             className="rounded-md bg-[var(--accent)] px-2.5 py-1 font-medium text-[var(--ink)]"

@@ -14,6 +14,8 @@ type ChatMessage = {
   content: string;
   citations?: Citation[];
   mode?: string;
+  provider?: string;
+  model?: string | null;
   warning?: string;
 };
 
@@ -50,6 +52,8 @@ export function ChatPanel() {
           content: data.answer,
           citations: data.citations,
           mode: data.mode,
+          provider: data.provider,
+          model: data.model,
           warning: data.warning,
         },
       ]);
@@ -79,6 +83,8 @@ export function ChatPanel() {
             {msg.mode && (
               <p className="mt-2 text-[10px] uppercase tracking-wide opacity-60">
                 mode: {msg.mode}
+                {msg.provider ? ` · ${msg.provider}` : ""}
+                {msg.model ? ` · ${msg.model}` : ""}
                 {msg.warning ? ` · palace: ${msg.warning}` : ""}
               </p>
             )}

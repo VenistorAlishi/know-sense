@@ -24,6 +24,13 @@ npm run dev      # http://127.0.0.1:3847
 
 Скопируйте [`.env.example`](.env.example) → `.env.local` при необходимости.
 
+### LLM для чата
+
+Приоритет: **env-ключ → [/settings](http://127.0.0.1:3847/settings) → Ollama → extractive**.
+
+Модель Cursor из агента в приложение не подключается (нет публичного API-ключа).  
+Вставьте свой ключ OpenAI / Anthropic / OpenRouter на [/settings](http://127.0.0.1:3847/settings) или в `.env.local`.
+
 ### Переменные окружения
 
 | Var | Default | Назначение |
@@ -31,11 +38,11 @@ npm run dev      # http://127.0.0.1:3847
 | `PALACE_URL` | `http://127.0.0.1:3851` | URL FastAPI-bridge MemPalace |
 | `MEMPALACE_EMBEDDING_MODEL` | `embeddinggemma` | multilingual/RU эмбеддер (не MiniLM) |
 | `MEMPALACE_LANG` | `ru` | язык palace |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `OPENROUTER_API_KEY` | — | облачный LLM |
 | `LLM_MODEL` / `OLLAMA_MODEL` | `qwen3.5:9b` | модель чата |
-| `LLM_BASE_URL` | auto `http://127.0.0.1:11434/v1` | OpenAI-compat (Ollama) |
-| `OPENAI_API_KEY` | — | облачный/совместимый API (перебивает auto-Ollama) |
+| `LLM_BASE_URL` | auto | OpenAI-compat / Ollama |
 
-Без Ollama и без ключа чат работает в **extractive** режиме (цитаты из памяти).
+Без ключа и без Ollama чат работает в **extractive** режиме (цитаты из памяти).
 
 ## Архитектура
 

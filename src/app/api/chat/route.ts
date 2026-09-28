@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveLlmConfig } from "@/lib/llm";
+import { completeChat, resolveLlmConfig } from "@/lib/llm";
 import { palaceHealth, palaceSearch, type PalaceHit } from "@/lib/palace";
 import { searchKnowledge } from "@/lib/store";
 
@@ -31,7 +31,7 @@ function extractiveAnswer(message: string, citations: ChatCitation[]): string {
     "Ключевые цитаты:",
     ...lines,
     "",
-    "Режим: extractive (без LLM). Запустите Ollama (`ollama pull qwen3.5:9b`) или задайте OPENAI_API_KEY.",
+    "Режим: extractive (без LLM). Добавьте API-ключ в /settings или запустите Ollama.",
   ].join("\n");
 }
 
@@ -56,33 +56,11 @@ async function llmAnswer(
     "В конце перечисли номера цитат, на которые опираешься.",
   ].join(" ");
 
-  const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.apiKey || "ollama"}`,
-    },
-    body: JSON.stringify({
-      model: cfg.model,
-      temperature: 0.2,
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: `Вопрос:\n${message}\n\nКонтекст памяти:\n${context || "(пусто)"}`,
-        },
-      ],
-    }),
+  return completeChat({
+    cfg,
+    system,
+    user: `Вопрос:\n${message}\n\nКонтекст памяти:\n${context || "(пусто)"}`,
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`LLM error ${res.status}: ${errText.slice(0, 300)}`);
-  }
-  const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("Empty LLM response");
-  return String(content);
 }
 
 async function gatherCitations(
@@ -187,6 +165,7 @@ export async function POST(request: Request) {
       mode,
       provider,
       model: llm.configured ? llm.model : null,
+      source: llm.source,
       palaceOk: gathered.palaceOk,
       warning: gathered.warning,
     });
@@ -208,6 +187,7 @@ export async function GET() {
       provider: llm.provider,
       model: llm.configured ? llm.model : null,
       baseUrl: llm.configured ? llm.baseUrl : null,
+      source: llm.source,
     },
     palace: health.ok ? health.data : { ok: false, error: health.error },
   });
