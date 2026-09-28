@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Meaning, PersonMention } from "@/lib/types";
 
 const KIND_LABEL: Record<string, string> = {
@@ -30,7 +31,9 @@ export function MeaningsList({ meanings }: { meanings: Meaning[] }) {
             {m.speakers.length > 0 && (
               <>
                 <span>·</span>
-                <span className="normal-case tracking-normal">{m.speakers.join(", ")}</span>
+                <span className="normal-case tracking-normal">
+                  {m.speakers.join(", ")}
+                </span>
               </>
             )}
           </div>
@@ -50,7 +53,7 @@ export function PeopleStrip({ people }: { people: PersonMention[] }) {
     <ul className="flex flex-wrap gap-2">
       {people.map((p) => (
         <li key={p.name}>
-          <a
+          <Link
             href={`/people/${encodeURIComponent(p.isPrimary ? "kirill" : p.name)}`}
             className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition ${
               p.isPrimary
@@ -60,7 +63,7 @@ export function PeopleStrip({ people }: { people: PersonMention[] }) {
           >
             <span className="font-medium">{p.name}</span>
             {p.isPrimary && <span className="text-xs opacity-80">вы</span>}
-          </a>
+          </Link>
         </li>
       ))}
     </ul>

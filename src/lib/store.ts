@@ -116,13 +116,20 @@ export async function getMeeting(id: string) {
 export async function getPerson(key: string) {
   const store = await loadStore();
   const normalized = normalizePersonKey(key);
+  const wantsUser =
+    normalized === "кирилл" ||
+    normalized === "kirill" ||
+    normalized === "kiril" ||
+    isUserName(key);
+
   const entry =
     store.peopleIndex[normalized] ||
+    (wantsUser ? store.peopleIndex["кирилл"] : undefined) ||
     Object.values(store.peopleIndex).find(
       (p) =>
         normalizePersonKey(p.canonicalName) === normalized ||
         p.aliases.some((a) => normalizePersonKey(a) === normalized) ||
-        (normalized === "кирилл" && p.isUser),
+        (wantsUser && p.isUser),
     );
 
   if (!entry) return null;
