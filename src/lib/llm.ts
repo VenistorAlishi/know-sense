@@ -246,6 +246,10 @@ export async function completeChat(opts: {
   const { cfg, system, user } = opts;
   if (!cfg.configured) throw new Error("LLM not configured");
 
+  const timeout = AbortSignal.timeout(
+    Number(process.env.LLM_TIMEOUT_MS) || 45_000,
+  );
+
   if (cfg.provider === "anthropic") {
     const res = await fetch(`${cfg.baseUrl}/v1/messages`, {
       method: "POST",
@@ -254,6 +258,7 @@ export async function completeChat(opts: {
         "x-api-key": cfg.apiKey || "",
         "anthropic-version": "2023-06-01",
       },
+      signal: timeout,
       body: JSON.stringify({
         model: cfg.model,
         max_tokens: 1024,
@@ -291,6 +296,7 @@ export async function completeChat(opts: {
   const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
     headers,
+    signal: timeout,
     body: JSON.stringify({
       model: cfg.model,
       temperature: 0.2,

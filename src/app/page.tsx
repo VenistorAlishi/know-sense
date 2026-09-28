@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InboxPanel } from "@/components/inbox-panel";
 import { SearchBox } from "@/components/search-box";
 import { UploadPanel } from "@/components/upload-panel";
 import { listStats } from "@/lib/store";
@@ -29,31 +30,30 @@ export default async function HomePage() {
             {self.canonicalName}
           </p>
           <h1 className="text-xl font-medium leading-snug text-[var(--wash)] sm:text-2xl">
-            Векторная память обо мне, близких и всём, что я подтягиваю с компа
+            Второй мозг: факты и задачи поверх сырой памяти
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-[var(--paper)]/75 sm:text-base">
-            Сначала структура и универсальный ingest. Первый корпус — три
-            большие переписки Telegram: из них соберём контекст о вас и трёх
-            ближайших людях.
+            Inbox для быстрых заметок, экран открытого и чат в режиме state/recall.
+            TG-экспорты можно подтянуть позже.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/chat"
+              href="/open"
               className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:brightness-110"
+            >
+              Открытое
+            </Link>
+            <Link
+              href="/chat"
+              className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
             >
               Чат с памятью
             </Link>
             <Link
-              href="/ingest"
+              href="/extract"
               className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
             >
-              Загрузить TG-экспорт
-            </Link>
-            <Link
-              href={`/people/${self.id}`}
-              className="rounded-lg border border-[var(--paper)]/25 px-4 py-2.5 text-sm text-[var(--paper)] transition hover:bg-white/5"
-            >
-              Мой профиль
+              Extract
             </Link>
           </div>
         </div>
@@ -61,10 +61,10 @@ export default async function HomePage() {
 
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Люди", counts.people],
-          ["Близкие", counts.closePeople],
+          ["Открытые задачи", counts.openTasks],
+          ["Открытые факты", counts.openFacts],
           ["Источники", counts.sources],
-          ["Чанки", counts.chunks],
+          ["Люди", counts.people],
         ].map(([label, value]) => (
           <div
             key={label as string}
@@ -78,6 +78,27 @@ export default async function HomePage() {
         ))}
       </section>
 
+      <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+        <InboxPanel />
+        <aside className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--paper)]/70 p-5">
+          <h2 className="font-[family-name:var(--font-display)] text-xl">
+            Файловый ingest
+          </h2>
+          <UploadPanel compact />
+          {latest && (
+            <p className="text-sm text-[var(--ink-soft)]">
+              Последний:{" "}
+              <Link
+                href={`/sources/${latest.id}`}
+                className="text-[var(--accent-deep)] hover:underline"
+              >
+                {latest.title}
+              </Link>
+            </p>
+          )}
+        </aside>
+      </section>
+
       <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <h2 className="mb-2 font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
@@ -85,8 +106,7 @@ export default async function HomePage() {
           </h2>
           {closePeople.length === 0 ? (
             <p className="text-sm text-[var(--muted)]">
-              Пока пусто. После загрузки трёх личных TG-чатов здесь появятся
-              три близких контакта.
+              Пока пусто. Добавьте заметки или TG-чаты — близкие появятся здесь.
             </p>
           ) : (
             <ul className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
@@ -108,34 +128,15 @@ export default async function HomePage() {
             </ul>
           )}
         </div>
-
-        <aside className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--paper)]/70 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-xl">
-            Быстрый ingest
+        <div>
+          <h2 className="mb-2 font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
+            Поиск по смыслу
           </h2>
-          <UploadPanel compact />
-          {latest && (
-            <p className="text-sm text-[var(--ink-soft)]">
-              Последний:{" "}
-              <Link
-                href={`/sources/${latest.id}`}
-                className="text-[var(--accent-deep)] hover:underline"
-              >
-                {latest.title}
-              </Link>
-            </p>
-          )}
-        </aside>
-      </section>
-
-      <section>
-        <h2 className="mb-2 font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
-          Поиск по смыслу
-        </h2>
-        <p className="mb-5 text-sm text-[var(--muted)]">
-          Поиск идёт по чанкам всех источников в персональной базе.
-        </p>
-        <SearchBox />
+          <p className="mb-5 text-sm text-[var(--muted)]">
+            Поиск по чанкам всех источников.
+          </p>
+          <SearchBox />
+        </div>
       </section>
 
       <style>{`

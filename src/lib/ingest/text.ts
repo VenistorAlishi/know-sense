@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import type { Chunk, Fact, KnowledgeStore, Person, Source, SourceType } from "../types";
-import { makeChunk, makeFact } from "./helpers";
+import { heuristicFactsFromText, makeChunk, makeFact } from "./helpers";
 
 export function ingestPlainText(
   raw: string,
@@ -18,10 +18,12 @@ export function ingestPlainText(
   peopleTouched: Person[];
 } {
   const sourceId = randomUUID();
+  const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
   const title =
     ctx.title ||
-    ctx.filename.replace(/\.[^.]+$/, "") ||
-    (type === "note" ? "Заметка" : "Файл");
+    (type === "note"
+      ? `Заметка ${stamp}`
+      : ctx.filename.replace(/\.[^.]+$/, "") || "Файл");
 
   const parts = raw.match(/[\s\S]{1,1200}/g) || [raw];
   const chunks = parts
@@ -48,9 +50,20 @@ export function ingestPlainText(
         detail: chunks[0].text.slice(0, 400),
         evidenceChunkIds: [chunks[0].id],
         confidence: "medium",
+        origin: "heuristic",
       }),
     );
   }
+
+  facts.push(
+    ...heuristicFactsFromText({
+      sourceId,
+      personIds: [ctx.self.id],
+      text: raw,
+      chunkIds: chunks.map((c) => c.id),
+      origin: "heuristic",
+    }),
+  );
 
   const source: Source = {
     id: sourceId,

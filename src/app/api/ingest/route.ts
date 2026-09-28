@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     let type: SourceType | "auto" = "auto";
     let title: string | undefined;
     let markPeerClose: boolean | undefined;
+    let syncPalace: boolean | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
@@ -65,6 +66,9 @@ export async function POST(request: Request) {
       if (typeof body.markPeerClose === "boolean") {
         markPeerClose = body.markPeerClose;
       }
+      if (typeof body.syncPalace === "boolean") {
+        syncPalace = body.syncPalace;
+      }
     }
 
     if (!text.trim()) {
@@ -80,6 +84,7 @@ export async function POST(request: Request) {
       type,
       title,
       markPeerClose,
+      syncPalace,
     });
 
     return NextResponse.json({

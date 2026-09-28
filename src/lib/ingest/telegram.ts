@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { isSelfName } from "../bootstrap";
 import type { Chunk, Fact, KnowledgeStore, Person, Source } from "../types";
 import { upsertPerson } from "../store";
-import { makeChunk, makeFact } from "./helpers";
+import { heuristicFactsFromText, makeChunk, makeFact } from "./helpers";
 
 type TgTextEntity = string | { type?: string; text?: string };
 
@@ -106,9 +106,9 @@ function heuristicFactsFromChat(input: {
   chunks: Chunk[];
   sampleText: string;
 }): Fact[] {
-  const facts: Fact[] = [];
   const personIds = [input.self.id, ...(input.peer ? [input.peer.id] : [])];
   const evidence = input.chunks.slice(0, 3).map((c) => c.id);
+  const facts: Fact[] = [];
 
   if (input.peer) {
     facts.push(
@@ -120,50 +120,20 @@ function heuristicFactsFromChat(input: {
         detail: `Личная переписка Telegram между Кириллом и ${input.peer.canonicalName}.`,
         evidenceChunkIds: evidence,
         confidence: "high",
+        origin: "heuristic",
       }),
     );
   }
 
-  const taskRe =
-    /(?:надо|нужно|сделай|сделаем|задача|дедлайн|к пятниц|завтра|договорились)\b[^.!?\n]{8,120}/gi;
-  const tasks = input.sampleText.match(taskRe) || [];
-  for (const t of [...new Set(tasks)].slice(0, 8)) {
-    facts.push(
-      makeFact({
-        sourceId: input.sourceId,
-        personIds,
-        kind: "task",
-        title: t.trim().slice(0, 80),
-        detail: t.trim(),
-        evidenceChunkIds: evidence,
-        confidence: "low",
-      }),
-    );
-  }
-
-  const themeHints: Array<[RegExp, string]> = [
-    [/работ|проект|релиз|продукт/i, "работа и проекты"],
-    [/семь|мама|папа|жен|муж|дочь|сын/i, "семья"],
-    [/деньг|бюджет|зарплат|оплат/i, "деньги"],
-    [/здоров|врач|больниц/i, "здоровье"],
-    [/путешеств|поездк|отпуск|билет/i, "поездки"],
-    [/учёб|универ|курс|обучен/i, "обучение"],
-  ];
-  for (const [re, theme] of themeHints) {
-    if (re.test(input.sampleText)) {
-      facts.push(
-        makeFact({
-          sourceId: input.sourceId,
-          personIds,
-          kind: "theme",
-          title: theme,
-          detail: `В переписке встречается тема «${theme}».`,
-          evidenceChunkIds: evidence,
-          confidence: "medium",
-        }),
-      );
-    }
-  }
+  facts.push(
+    ...heuristicFactsFromText({
+      sourceId: input.sourceId,
+      personIds,
+      text: input.sampleText,
+      chunkIds: evidence,
+      origin: "heuristic",
+    }),
+  );
 
   return facts;
 }

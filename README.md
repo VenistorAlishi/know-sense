@@ -52,15 +52,18 @@ npm run dev      # http://127.0.0.1:3847
 - После ingest чанки синхронизируются в wings (`kirill`, близкие контакты)
 - `/api/chat` → palace search (+ local store fallback) → LLM или extractive
 
-## Модель (v2)
+## Модель (v3)
 
 - **Person** — Кирилл (`isSelf`) + близкие (`close`) + остальные
 - **Source** — `telegram_chat` | `meeting` | `note` | `file` | `other`
 - **Chunk** — текстовое окно + локальный эмбеддинг в JSON-store
-- **Fact** — эвристические смыслы
+- **Fact** — смысл с `status` (open/done/stale/dismissed) и `origin` (heuristic/manual/llm/import)
+- **Relation** — тонкие связи между людьми
 - **MemPalace drawers** — verbatim для recall
 
 Хранилище: `data/store/knowledge.json`, сырьё: `data/sources/`, palace: `data/palace/`.
+
+UI: Inbox на главной, [/open](http://127.0.0.1:3847/open) для открытых задач, чат `state|recall|auto`, [/extract](http://127.0.0.1:3847/extract) для LLM-кандидатов.
 
 ## Telegram → первый корпус
 

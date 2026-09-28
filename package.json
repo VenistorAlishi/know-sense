@@ -12,7 +12,8 @@
     "build": "next build",
     "start": "next start --port 3847 --hostname 127.0.0.1",
     "lint": "eslint",
-    "ingest": "node scripts/ingest.mjs"
+    "ingest": "node scripts/ingest.mjs",
+    "extract": "node scripts/extract.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

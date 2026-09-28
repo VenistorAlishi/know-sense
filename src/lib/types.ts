@@ -30,6 +30,10 @@ export type FactKind =
   | "decision"
   | "risk";
 
+export type FactStatus = "open" | "done" | "stale" | "dismissed";
+
+export type FactOrigin = "heuristic" | "manual" | "llm" | "import";
+
 export interface Person {
   id: string;
   canonicalName: string;
@@ -52,6 +56,7 @@ export interface SourceMeta {
   messageCount?: number;
   peerName?: string;
   originalFilename?: string;
+  extractedAt?: string;
 }
 
 export interface Source {
@@ -91,15 +96,30 @@ export interface Fact {
   detail: string;
   evidenceChunkIds: string[];
   confidence: "high" | "medium" | "low";
+  status: FactStatus;
+  origin: FactOrigin;
+  dueAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Relation {
+  id: string;
+  fromPersonId: string;
+  toPersonId: string;
+  label: string;
+  sourceId?: string;
+  evidenceChunkIds: string[];
   createdAt: string;
 }
 
 export interface KnowledgeStore {
-  version: 2;
+  version: 3;
   updatedAt: string;
   selfPersonId: string;
   people: Person[];
   sources: Source[];
   chunks: Chunk[];
   facts: Fact[];
+  relations: Relation[];
 }

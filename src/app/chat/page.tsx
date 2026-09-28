@@ -14,13 +14,12 @@ export default async function ChatPage() {
           Чат с памятью
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Retrieval из MemPalace. Облачный ключ — на{" "}
+          Режимы auto / state / recall. State отвечает по открытым фактам; recall —
+          по MemPalace. Ключ — на{" "}
           <a href="/settings" className="underline decoration-[var(--accent)]">
             /settings
           </a>
-          ; локально —{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">ollama pull qwen3.5:9b</code>.
-          Без LLM — extractive цитаты.
+          .
         </p>
         <p className="mt-2 text-xs text-[var(--muted)]">
           Palace:{" "}

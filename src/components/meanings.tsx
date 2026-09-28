@@ -30,6 +30,10 @@ export function FactsList({ facts }: { facts: Fact[] }) {
           <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-[var(--muted)]">
             <span>{KIND_LABEL[f.kind] || f.kind}</span>
             <span>·</span>
+            <span>{f.status || "open"}</span>
+            <span>·</span>
+            <span>{f.origin || "heuristic"}</span>
+            <span>·</span>
             <span>{f.confidence}</span>
           </div>
           <h3 className="font-medium text-[var(--ink)]">{f.title}</h3>

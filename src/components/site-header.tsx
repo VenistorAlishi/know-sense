@@ -16,6 +16,9 @@ export function SiteHeader() {
           <Link href="/chat" className="hover:text-[var(--ink)]">
             Чат
           </Link>
+          <Link href="/open" className="hover:text-[var(--ink)]">
+            Открытое
+          </Link>
           <Link href="/people" className="hover:text-[var(--ink)]">
             Люди
           </Link>
@@ -24,6 +27,9 @@ export function SiteHeader() {
           </Link>
           <Link href="/ingest" className="hover:text-[var(--ink)]">
             Ingest
+          </Link>
+          <Link href="/extract" className="hover:text-[var(--ink)]">
+            Extract
           </Link>
           <Link href="/settings" className="hover:text-[var(--ink)]">
             API

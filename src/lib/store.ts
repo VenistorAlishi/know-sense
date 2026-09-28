@@ -1,13 +1,23 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { ensureSelf, emptyStore, isSelfName, normalizePersonKey } from "./bootstrap";
+import {
+  ensureSelf,
+  emptyStore,
+  isSelfName,
+  migrateStoreToV3,
+  normalizePersonKey,
+} from "./bootstrap";
 import { embedText } from "./embeddings";
 import type {
   Chunk,
   Fact,
+  FactKind,
+  FactOrigin,
+  FactStatus,
   KnowledgeStore,
   Person,
+  Relation,
   RelationToSelf,
   Source,
 } from "./types";
@@ -26,13 +36,10 @@ export async function loadStore(): Promise<KnowledgeStore> {
   await ensureDirs();
   try {
     const raw = await fs.readFile(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as KnowledgeStore | { version?: number };
-    if (!parsed || (parsed as KnowledgeStore).version !== 2) {
-      const store = emptyStore();
-      await saveStore(store);
-      return store;
-    }
-    const store = ensureSelf(parsed as KnowledgeStore);
+    const parsed = JSON.parse(raw) as { version?: number };
+    const needsMigrate = parsed?.version !== 3;
+    const store = migrateStoreToV3(parsed);
+    if (needsMigrate) await saveStore(store);
     return store;
   } catch {
     const store = emptyStore();
@@ -44,6 +51,8 @@ export async function loadStore(): Promise<KnowledgeStore> {
 export async function saveStore(store: KnowledgeStore): Promise<void> {
   await ensureDirs();
   store.updatedAt = new Date().toISOString();
+  store.version = 3;
+  if (!Array.isArray(store.relations)) store.relations = [];
   await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
@@ -168,7 +177,6 @@ export async function commitIngest(result: {
   result.source.rawRef = rawRef;
   result.source.path = path.join("data", "sources", rawRef);
 
-  // remove previous source with same title+type (re-ingest)
   const existing = store.sources.find(
     (s) => s.type === result.source.type && s.title === result.source.title,
   );
@@ -263,9 +271,146 @@ export async function getPerson(idOrName: string) {
   return { person, sources, facts, chunks };
 }
 
+export function listOpenFacts(
+  store: KnowledgeStore,
+  opts?: { kinds?: FactKind[]; personId?: string },
+): Fact[] {
+  const kinds = opts?.kinds;
+  return store.facts
+    .filter((f) => f.status === "open")
+    .filter((f) => !kinds || kinds.includes(f.kind))
+    .filter((f) => !opts?.personId || f.personIds.includes(opts.personId))
+    .sort((a, b) => (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt));
+}
+
+export async function listFacts(filters?: {
+  status?: FactStatus | "all";
+  kind?: FactKind;
+  personId?: string;
+}) {
+  const store = await loadStore();
+  let facts = [...store.facts];
+  if (filters?.status && filters.status !== "all") {
+    facts = facts.filter((f) => f.status === filters.status);
+  }
+  if (filters?.kind) facts = facts.filter((f) => f.kind === filters.kind);
+  if (filters?.personId) {
+    facts = facts.filter((f) => f.personIds.includes(filters.personId!));
+  }
+  facts.sort((a, b) =>
+    (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt),
+  );
+  return { store, facts };
+}
+
+export async function createFact(input: {
+  title: string;
+  detail?: string;
+  kind?: FactKind;
+  personIds?: string[];
+  sourceId?: string;
+  evidenceChunkIds?: string[];
+  confidence?: Fact["confidence"];
+  origin?: FactOrigin;
+  dueAt?: string;
+  status?: FactStatus;
+}): Promise<Fact> {
+  const store = await loadStore();
+  const self = getSelf(store);
+  const now = new Date().toISOString();
+  const personIds =
+    input.personIds && input.personIds.length
+      ? input.personIds
+      : [self.id];
+  const fact: Fact = {
+    id: randomUUID(),
+    title: input.title.trim(),
+    detail: (input.detail || input.title).trim(),
+    kind: input.kind || "context",
+    personIds,
+    sourceId: input.sourceId || "",
+    evidenceChunkIds: input.evidenceChunkIds || [],
+    confidence: input.confidence || "high",
+    status: input.status || "open",
+    origin: input.origin || "manual",
+    dueAt: input.dueAt,
+    createdAt: now,
+    updatedAt: now,
+  };
+  store.facts.unshift(fact);
+  for (const pid of personIds) {
+    const person = store.people.find((p) => p.id === pid);
+    if (person && !person.factIds.includes(fact.id)) {
+      person.factIds.push(fact.id);
+      person.updatedAt = now;
+    }
+  }
+  if (fact.sourceId) {
+    const source = store.sources.find((s) => s.id === fact.sourceId);
+    if (source && !source.factIds.includes(fact.id)) {
+      source.factIds.push(fact.id);
+    }
+  }
+  await saveStore(store);
+  return fact;
+}
+
+export async function patchFact(
+  id: string,
+  patch: Partial<
+    Pick<
+      Fact,
+      | "title"
+      | "detail"
+      | "kind"
+      | "status"
+      | "dueAt"
+      | "confidence"
+      | "personIds"
+    >
+  >,
+): Promise<Fact | null> {
+  const store = await loadStore();
+  const fact = store.facts.find((f) => f.id === id);
+  if (!fact) return null;
+  if (patch.title !== undefined) fact.title = patch.title.trim();
+  if (patch.detail !== undefined) fact.detail = patch.detail.trim();
+  if (patch.kind !== undefined) fact.kind = patch.kind;
+  if (patch.status !== undefined) fact.status = patch.status;
+  if (patch.dueAt !== undefined) fact.dueAt = patch.dueAt || undefined;
+  if (patch.confidence !== undefined) fact.confidence = patch.confidence;
+  if (patch.personIds !== undefined) fact.personIds = patch.personIds;
+  fact.updatedAt = new Date().toISOString();
+  await saveStore(store);
+  return fact;
+}
+
+export async function addRelation(input: {
+  fromPersonId: string;
+  toPersonId: string;
+  label: string;
+  sourceId?: string;
+  evidenceChunkIds?: string[];
+}): Promise<Relation> {
+  const store = await loadStore();
+  const relation: Relation = {
+    id: randomUUID(),
+    fromPersonId: input.fromPersonId,
+    toPersonId: input.toPersonId,
+    label: input.label.trim(),
+    sourceId: input.sourceId,
+    evidenceChunkIds: input.evidenceChunkIds || [],
+    createdAt: new Date().toISOString(),
+  };
+  store.relations.push(relation);
+  await saveStore(store);
+  return relation;
+}
+
 export async function listStats() {
   const store = await loadStore();
   const self = getSelf(store);
+  const open = listOpenFacts(store);
   return {
     store,
     self,
@@ -275,6 +420,10 @@ export async function listStats() {
       sources: store.sources.length,
       chunks: store.chunks.length,
       facts: store.facts.length,
+      openFacts: open.length,
+      openTasks: open.filter((f) => f.kind === "task").length,
+      openDecisions: open.filter((f) => f.kind === "decision").length,
+      openRisks: open.filter((f) => f.kind === "risk").length,
     },
   };
 }
