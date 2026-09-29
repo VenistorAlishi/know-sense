@@ -36,8 +36,10 @@ export function UploadPanel({ compact = false }: { compact?: boolean }) {
       setError(data.error || data.detail || "Ошибка загрузки");
       return;
     }
+    const media =
+      typeof data.attachmentCount === "number" ? data.attachmentCount : 0;
     setOk(
-      `Загружено: ${data.source.title} · ${data.chunkCount} чанков · ${data.factCount} фактов`,
+      `Загружено: ${data.source.title} · ${data.chunkCount} чанков · ${data.factCount} фактов · ${media} медиа`,
     );
     startTransition(() => {
       router.push(`/sources/${data.source.id}`);

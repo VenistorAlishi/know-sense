@@ -1,6 +1,15 @@
 import { randomUUID } from "crypto";
 import { isSelfName } from "../bootstrap";
-import type { Chunk, Fact, KnowledgeStore, Person, Source } from "../types";
+import type {
+  Attachment,
+  AttachmentKind,
+  Chunk,
+  DeriveStatus,
+  Fact,
+  KnowledgeStore,
+  Person,
+  Source,
+} from "../types";
 import { upsertPerson } from "../store";
 import { heuristicFactsFromText, makeChunk, makeFact } from "./helpers";
 
@@ -17,6 +26,32 @@ interface TgMessage {
   actor_id?: string;
   text?: TgTextEntity | TgTextEntity[];
   text_entities?: Array<{ type?: string; text?: string }>;
+  photo?: string;
+  file?: string;
+  thumbnail?: string;
+  media_type?: string;
+  mime_type?: string;
+  duration_seconds?: number;
+  width?: number;
+  height?: number;
+  file_name?: string;
+  file_size?: number;
+  sticker_emoji?: string;
+  contact_information?: {
+    first_name?: string;
+    last_name?: string;
+    phone_number?: string;
+  };
+  location_information?: {
+    latitude?: number;
+    longitude?: number;
+  };
+  poll?: {
+    question?: string;
+    answers?: Array<{ text?: string; voters?: number }>;
+  };
+  forwarded_from?: string;
+  reply_to_message_id?: number;
 }
 
 interface TgExport {
@@ -99,6 +134,95 @@ function windowMessages(
   return windows;
 }
 
+function kindFromPath(ref: string, mediaType?: string, mime?: string): AttachmentKind {
+  const r = ref.replace(/\\/g, "/").toLowerCase();
+  const mt = (mediaType || "").toLowerCase();
+  if (r.includes("voice_messages/") || mt === "voice_message") return "voice";
+  if (r.includes("round_video_messages/") || mt === "video_message") return "video_note";
+  if (r.includes("video_files/") || mt === "video_file") return "video";
+  if (r.includes("stickers/") || mt === "sticker") return "sticker";
+  if (r.includes("photos/") || mt === "photo" || !!mime?.startsWith("image/")) {
+    if (mt === "animation" || r.endsWith(".gif") || r.endsWith(".webp")) {
+      return mt === "sticker" ? "sticker" : "animation";
+    }
+    return "photo";
+  }
+  if (r.includes("files/") || mt === "audio_file" || mime?.startsWith("audio/")) {
+    if (mime?.startsWith("audio/") || mt === "audio_file") return "audio";
+    return "document";
+  }
+  if (mt === "animation") return "animation";
+  return "other";
+}
+
+function fileRefFromMessage(msg: TgMessage): string | undefined {
+  const raw = msg.file || msg.photo || msg.thumbnail;
+  if (!raw || typeof raw !== "string") return undefined;
+  return raw.replace(/\\/g, "/");
+}
+
+function mediaLabel(kind: AttachmentKind, msg: TgMessage, caption: string): string {
+  const dur =
+    typeof msg.duration_seconds === "number" ? ` ${msg.duration_seconds}s` : "";
+  const emoji = msg.sticker_emoji ? ` ${msg.sticker_emoji}` : "";
+  const base = `[${kind}${dur}${emoji}]`;
+  return caption ? `${base} ${caption}` : base;
+}
+
+function deriveStatusFor(kind: AttachmentKind, hasFile: boolean): DeriveStatus {
+  if (!hasFile) return "none";
+  if (
+    kind === "voice" ||
+    kind === "audio" ||
+    kind === "video" ||
+    kind === "video_note" ||
+    kind === "photo" ||
+    kind === "document" ||
+    kind === "animation"
+  ) {
+    return "pending";
+  }
+  return "none";
+}
+
+function extractStructuredMedia(msg: TgMessage): {
+  kind: AttachmentKind;
+  caption: string;
+  ref?: string;
+} | null {
+  if (msg.contact_information) {
+    const c = msg.contact_information;
+    const caption = [c.first_name, c.last_name, c.phone_number]
+      .filter(Boolean)
+      .join(" ");
+    return { kind: "contact", caption: caption || "contact" };
+  }
+  if (msg.location_information) {
+    const loc = msg.location_information;
+    return {
+      kind: "location",
+      caption: `${loc.latitude ?? "?"}, ${loc.longitude ?? "?"}`,
+    };
+  }
+  if (msg.poll) {
+    const answers = (msg.poll.answers || [])
+      .map((a) => a.text)
+      .filter(Boolean)
+      .join("; ");
+    return {
+      kind: "poll",
+      caption: `${msg.poll.question || "poll"}${answers ? ` — ${answers}` : ""}`,
+    };
+  }
+  const ref = fileRefFromMessage(msg);
+  if (ref || msg.media_type) {
+    const kind = kindFromPath(ref || "", msg.media_type, msg.mime_type);
+    const caption = extractTelegramText(msg.text).trim();
+    return { kind, caption, ref };
+  }
+  return null;
+}
+
 function heuristicFactsFromChat(input: {
   sourceId: string;
   self: Person;
@@ -152,6 +276,7 @@ export function ingestTelegram(
   chunks: Chunk[];
   facts: Fact[];
   peopleTouched: Person[];
+  attachments: Attachment[];
 } {
   let data: TgExport;
   try {
@@ -168,7 +293,6 @@ export function ingestTelegram(
   const sourceId = randomUUID();
   const peopleTouched: Person[] = [ctx.self];
 
-  // Register speakers
   const speakerToPerson = new Map<string, Person>();
   speakerToPerson.set(ctx.self.canonicalName, ctx.self);
 
@@ -178,14 +302,13 @@ export function ingestTelegram(
     date?: string;
     personId?: string;
   }> = [];
+  const attachments: Attachment[] = [];
+  const mediaChunks: Chunk[] = [];
+  let textMessageCount = 0;
 
-  for (const msg of data.messages) {
-    if (msg.type && msg.type !== "message") continue;
-    const text = extractTelegramText(msg.text).trim();
-    if (!text) continue;
+  const resolvePerson = (msg: TgMessage): Person => {
     const from = (msg.from || msg.actor || "Unknown").trim();
     const fromId = msg.from_id || msg.actor_id;
-
     let person = speakerToPerson.get(from);
     if (!person) {
       person = upsertPerson(ctx.store, {
@@ -204,16 +327,90 @@ export function ingestTelegram(
         relationToSelf: person.relationToSelf,
       });
     }
+    return person;
+  };
 
-    messageRows.push({
-      from: person.isSelf ? "Кирилл" : person.canonicalName,
-      text,
-      date: msg.date,
-      personId: person.id,
-    });
+  for (const msg of data.messages) {
+    if (msg.type && msg.type !== "message" && msg.type !== "service") {
+      // keep service only if media somehow attached — normally skip non-message
+      if (msg.type !== "message") continue;
+    }
+    if (msg.type === "service") continue;
+
+    const text = extractTelegramText(msg.text).trim();
+    const media = extractStructuredMedia(msg);
+    if (!text && !media) continue;
+
+    const person = resolvePerson(msg);
+    const displayName = person.isSelf ? "Кирилл" : person.canonicalName;
+    const personIds = [person.id];
+
+    if (text) {
+      textMessageCount += 1;
+      messageRows.push({
+        from: displayName,
+        text,
+        date: msg.date,
+        personId: person.id,
+      });
+    }
+
+    if (media) {
+      const attId = randomUUID();
+      const hasFile = Boolean(media.ref);
+      const status = deriveStatusFor(media.kind, hasFile);
+      const label = mediaLabel(media.kind, msg, media.caption);
+      const chunk = makeChunk({
+        sourceId,
+        text: `${displayName}: ${label}`,
+        title: `Медиа ${media.kind}${msg.date ? ` ${msg.date}` : ""}`.trim(),
+        kind: "media_ref",
+        speaker: displayName,
+        timestamp: msg.date,
+        personIds,
+        attachmentIds: [attId],
+        telegramMessageId: msg.id,
+      });
+      mediaChunks.push(chunk);
+
+      const originalName =
+        msg.file_name ||
+        (media.ref ? media.ref.split("/").pop() : undefined) ||
+        media.kind;
+
+      attachments.push({
+        id: attId,
+        sourceId,
+        messageId: msg.id,
+        chunkId: chunk.id,
+        kind: media.kind,
+        mime: msg.mime_type,
+        originalName,
+        storedPath: "",
+        byteSize: msg.file_size,
+        width: msg.width,
+        height: msg.height,
+        durationSec: msg.duration_seconds,
+        caption: media.caption || undefined,
+        telegramFileRef: media.ref,
+        deriveStatus: status,
+        personIds,
+        timestamp: msg.date,
+        createdAt: new Date().toISOString(),
+      });
+
+      // Also fold short media label into text windows so chronology stays dense
+      if (!text) {
+        messageRows.push({
+          from: displayName,
+          text: label,
+          date: msg.date,
+          personId: person.id,
+        });
+      }
+    }
   }
 
-  // Prefer peer = non-self with most messages in personal chats
   const counts = new Map<string, number>();
   for (const row of messageRows) {
     if (!row.personId || row.personId === ctx.self.id) continue;
@@ -241,7 +438,7 @@ export function ingestTelegram(
 
   const dates = messageRows.map((m) => m.date).filter(Boolean) as string[];
   const windows = windowMessages(messageRows);
-  const chunks = windows.map((w) =>
+  const textChunks = windows.map((w) =>
     makeChunk({
       sourceId,
       text: w.text,
@@ -254,6 +451,8 @@ export function ingestTelegram(
     }),
   );
 
+  const chunks = [...textChunks, ...mediaChunks];
+
   const sampleText = messageRows
     .slice(0, 400)
     .map((m) => m.text)
@@ -263,11 +462,10 @@ export function ingestTelegram(
     sourceId,
     self: ctx.self,
     peer,
-    chunks,
+    chunks: textChunks.length ? textChunks : chunks,
     sampleText,
   });
 
-  // Identity fact for peer
   if (peer) {
     facts.unshift(
       makeFact({
@@ -275,9 +473,35 @@ export function ingestTelegram(
         personIds: [peer.id, ctx.self.id],
         kind: "identity",
         title: peer.canonicalName,
-        detail: `Участник личной переписки Telegram «${chatName}» с Кириллом. Сообщений в экспорте: ${messageRows.length}.`,
+        detail: `Участник личной переписки Telegram «${chatName}» с Кириллом. Сообщений (текст): ${textMessageCount}; медиа: ${attachments.length}.`,
         evidenceChunkIds: chunks.slice(0, 2).map((c) => c.id),
         confidence: "high",
+      }),
+    );
+  }
+
+  if (attachments.length) {
+    const byKind = attachments.reduce(
+      (acc, a) => {
+        acc[a.kind] = (acc[a.kind] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    const kindSummary = Object.entries(byKind)
+      .map(([k, n]) => `${k}:${n}`)
+      .join(", ");
+    facts.push(
+      makeFact({
+        sourceId,
+        personIds: [ctx.self.id, ...(peer ? [peer.id] : [])],
+        kind: "context",
+        title: `Медиа в чате: ${attachments.length}`,
+        detail: `Вложений Telegram: ${kindSummary}. Слоты deriveStatus=pending готовы для ASR/OCR.`,
+        evidenceChunkIds: mediaChunks.slice(0, 3).map((c) => c.id),
+        confidence: "high",
+        origin: "heuristic",
+        status: "open",
       }),
     );
   }
@@ -295,19 +519,22 @@ export function ingestTelegram(
       chatId: data.id,
       chatType: data.type,
       messageCount: messageRows.length,
+      textMessageCount,
+      mediaCount: attachments.length,
       peerName: peer?.canonicalName,
       originalFilename: ctx.filename,
+      attachmentIds: attachments.map((a) => a.id),
       dateRange: {
         from: dates[0],
         to: dates[dates.length - 1],
       },
     },
     summary: peer
-      ? `Telegram-чат с ${peer.canonicalName}: ${messageRows.length} сообщений.`
-      : `Telegram-чат «${chatName}»: ${messageRows.length} сообщений.`,
+      ? `Telegram-чат с ${peer.canonicalName}: ${textMessageCount} текст, ${attachments.length} медиа.`
+      : `Telegram-чат «${chatName}»: ${textMessageCount} текст, ${attachments.length} медиа.`,
     chunkIds: [],
     factIds: [],
   };
 
-  return { source, chunks, facts, peopleTouched };
+  return { source, chunks, facts, peopleTouched, attachments };
 }

@@ -84,16 +84,17 @@ npm run desktop:dev      # окно «Смысл — Jarvis» → http://127.0.0
 - После ingest чанки синхронизируются в wings (`kirill`, близкие контакты)
 - `/api/chat` → palace search (+ local store fallback) → LLM или extractive
 
-## Модель (v3)
+## Модель (v4)
 
 - **Person** — Кирилл (`isSelf`) + близкие (`close`) + остальные
 - **Source** — `telegram_chat` | `meeting` | `note` | `file` | `other`
-- **Chunk** — текстовое окно + локальный эмбеддинг в JSON-store
+- **Chunk** — текстовое окно / `media_ref` / (позже transcript/ocr) + эмбеддинг
+- **Attachment** — фото, voice, video, video_note, document, sticker, … из TG export; `deriveStatus` для будущего ASR/OCR
 - **Fact** — смысл с `status` (open/done/stale/dismissed) и `origin` (heuristic/manual/llm/import)
 - **Relation** — тонкие связи между людьми
 - **MemPalace drawers** — verbatim для recall
 
-Хранилище: `data/store/knowledge.json`, сырьё: `data/sources/`, palace: `data/palace/`.
+Хранилище: `data/store/knowledge.json`, сырьё: `data/sources/`, медиа: `data/sources/<id>/media/`, palace: `data/palace/`.
 
 UI: [/jarvis](http://127.0.0.1:3847/jarvis) — command deck + embedding-карта; Inbox на главной; [/open](http://127.0.0.1:3847/open); чат `state|recall|auto`; [/extract](http://127.0.0.1:3847/extract).
 
@@ -107,11 +108,15 @@ UI: [/jarvis](http://127.0.0.1:3847/jarvis) — command deck + embedding-кар�
 4. Спросите в [/chat](http://127.0.0.1:3847/chat): «о чём мы с Анной?»
 
 ```bash
+# Папка ChatExport_* (JSON + media) — предпочтительно
+npm run ingest -- --type telegram /mnt/c/Users/KIRILL/Music/ChatExport_2026-09-28
+
+# Или несколько result.json
 npm run ingest -- --type telegram \
-  data/fixtures/tg1/result.json \
-  data/fixtures/tg2/result.json \
-  data/fixtures/tg3/result.json
+  data/fixtures/tg-media/result.json
 ```
+
+Список вложений: `GET /api/attachments?sourceId=…`
 
 ## Смена эмбеддера
 

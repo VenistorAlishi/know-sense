@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, statSync } from "fs";
-import { basename, join, resolve } from "path";
+import { basename, dirname, join, resolve } from "path";
 
 const args = process.argv.slice(2);
 let type = "auto";
@@ -19,7 +19,7 @@ if (!inputs.length) {
     "Usage: npm run ingest -- [--type telegram|meeting|note|file|auto] <path> [more paths...]",
   );
   console.error(
-    "  <path> may be result.json or a ChatExport_* folder containing result.json",
+    "  <path> may be result.json or a ChatExport_* folder containing result.json + media",
   );
   process.exit(1);
 }
@@ -29,8 +29,8 @@ const port = process.env.PORT || 3847;
 const normalizedType =
   type === "telegram" ? "telegram_chat" : type;
 
-/** Resolve ChatExport folder → result.json (or keep file path). */
-function resolveSourcePath(input) {
+/** Resolve ChatExport folder → { file, exportDir }. */
+function resolveSource(input) {
   const absolute = resolve(input);
   if (!existsSync(absolute)) {
     throw new Error(`Path not found: ${absolute}`);
@@ -47,13 +47,24 @@ function resolveSourcePath(input) {
         `No result.json in folder: ${absolute}\nExpected Telegram Desktop JSON export.`,
       );
     }
-    return hit;
+    return { file: hit, exportDir: absolute };
   }
-  return absolute;
+  // If result.json sits inside ChatExport_*, pass parent as exportDir
+  const parent = dirname(absolute);
+  const looksLikeExport =
+    /ChatExport_/i.test(parent) ||
+    existsSync(join(parent, "photos")) ||
+    existsSync(join(parent, "voice_messages")) ||
+    existsSync(join(parent, "files")) ||
+    existsSync(join(parent, "video_files"));
+  return {
+    file: absolute,
+    exportDir: looksLikeExport ? parent : undefined,
+  };
 }
 
 for (const input of inputs) {
-  const absolute = resolveSourcePath(input);
+  const { file: absolute, exportDir } = resolveSource(input);
   const text = readFileSync(absolute, "utf8");
   const inferredTelegram =
     normalizedType === "auto" &&
@@ -75,6 +86,7 @@ for (const input of inputs) {
       type: sendType,
       markPeerClose: sendType === "telegram_chat" || sendType === "auto",
       syncPalace: true,
+      exportDir: exportDir || undefined,
     }),
   });
   const data = await res.json();
@@ -87,11 +99,14 @@ for (const input of inputs) {
       {
         input,
         file: absolute,
+        exportDir: exportDir || null,
         sourceId: data.source.id,
         title: data.source.title,
         type: data.source.type,
         chunks: data.chunkCount,
         facts: data.factCount,
+        attachments: data.attachmentCount ?? 0,
+        mediaCount: data.source?.meta?.mediaCount ?? 0,
         people: data.people,
         palace: data.palace ?? null,
       },

@@ -16,7 +16,11 @@ export type ChunkKind =
   | "speaker"
   | "context"
   | "raw"
-  | "note";
+  | "note"
+  | "media_ref"
+  | "transcript"
+  | "ocr"
+  | "caption";
 
 export type FactKind =
   | "identity"
@@ -33,6 +37,22 @@ export type FactKind =
 export type FactStatus = "open" | "done" | "stale" | "dismissed";
 
 export type FactOrigin = "heuristic" | "manual" | "llm" | "import";
+
+export type AttachmentKind =
+  | "photo"
+  | "video"
+  | "video_note"
+  | "voice"
+  | "audio"
+  | "document"
+  | "sticker"
+  | "animation"
+  | "contact"
+  | "location"
+  | "poll"
+  | "other";
+
+export type DeriveStatus = "none" | "pending" | "done" | "failed";
 
 export interface Person {
   id: string;
@@ -57,6 +77,10 @@ export interface SourceMeta {
   peerName?: string;
   originalFilename?: string;
   extractedAt?: string;
+  exportDir?: string;
+  mediaCount?: number;
+  textMessageCount?: number;
+  attachmentIds?: string[];
 }
 
 export interface Source {
@@ -84,6 +108,32 @@ export interface Chunk {
   kind: ChunkKind;
   embedding: number[];
   personIds: string[];
+  attachmentIds?: string[];
+  telegramMessageId?: number;
+  createdAt: string;
+}
+
+export interface Attachment {
+  id: string;
+  sourceId: string;
+  messageId?: number;
+  chunkId?: string;
+  kind: AttachmentKind;
+  mime?: string;
+  originalName: string;
+  storedPath: string;
+  byteSize?: number;
+  sha256?: string;
+  width?: number;
+  height?: number;
+  durationSec?: number;
+  caption?: string;
+  telegramFileRef?: string;
+  derivedText?: string;
+  deriveStatus: DeriveStatus;
+  deriveError?: string;
+  personIds: string[];
+  timestamp?: string;
   createdAt: string;
 }
 
@@ -114,7 +164,7 @@ export interface Relation {
 }
 
 export interface KnowledgeStore {
-  version: 3;
+  version: 4;
   updatedAt: string;
   selfPersonId: string;
   people: Person[];
@@ -122,4 +172,5 @@ export interface KnowledgeStore {
   chunks: Chunk[];
   facts: Fact[];
   relations: Relation[];
+  attachments: Attachment[];
 }

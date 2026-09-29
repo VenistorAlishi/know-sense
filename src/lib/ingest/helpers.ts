@@ -10,6 +10,8 @@ export function makeChunk(input: {
   speaker?: string;
   timestamp?: string;
   personIds: string[];
+  attachmentIds?: string[];
+  telegramMessageId?: number;
 }): Chunk {
   return {
     id: randomUUID(),
@@ -21,6 +23,8 @@ export function makeChunk(input: {
     timestamp: input.timestamp,
     embedding: embedText(`${input.title}\n${input.text}`),
     personIds: input.personIds,
+    attachmentIds: input.attachmentIds,
+    telegramMessageId: input.telegramMessageId,
     createdAt: new Date().toISOString(),
   };
 }

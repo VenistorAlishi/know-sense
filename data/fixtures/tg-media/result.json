@@ -1,0 +1,58 @@
+{
+  "name": "Анна Тест",
+  "type": "personal_chat",
+  "id": 424242,
+  "messages": [
+    {
+      "id": 1,
+      "type": "message",
+      "date": "2026-01-01T10:00:00",
+      "from": "Кирилл",
+      "from_id": "user1",
+      "text": "Привет, надо созвониться завтра"
+    },
+    {
+      "id": 2,
+      "type": "message",
+      "date": "2026-01-01T10:01:00",
+      "from": "Анна Тест",
+      "from_id": "user2",
+      "text": "Ок, держи фото",
+      "photo": "photos/photo_1.jpg",
+      "width": 100,
+      "height": 80
+    },
+    {
+      "id": 3,
+      "type": "message",
+      "date": "2026-01-01T10:02:00",
+      "from": "Анна Тест",
+      "from_id": "user2",
+      "text": "",
+      "file": "voice_messages/audio_1.ogg",
+      "media_type": "voice_message",
+      "mime_type": "audio/ogg",
+      "duration_seconds": 12
+    },
+    {
+      "id": 4,
+      "type": "message",
+      "date": "2026-01-01T10:03:00",
+      "from": "Кирилл",
+      "from_id": "user1",
+      "text": "",
+      "file": "files/notes.pdf",
+      "media_type": "file",
+      "mime_type": "application/pdf",
+      "file_name": "notes.pdf"
+    },
+    {
+      "id": 5,
+      "type": "message",
+      "date": "2026-01-01T10:04:00",
+      "from": "Анна Тест",
+      "from_id": "user2",
+      "text": "Договорились"
+    }
+  ]
+}

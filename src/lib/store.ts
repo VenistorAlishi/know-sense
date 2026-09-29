@@ -5,11 +5,12 @@ import {
   ensureSelf,
   emptyStore,
   isSelfName,
-  migrateStoreToV3,
+  migrateStoreToV4,
   normalizePersonKey,
 } from "./bootstrap";
 import { embedText } from "./embeddings";
 import type {
+  Attachment,
   Chunk,
   Fact,
   FactKind,
@@ -22,6 +23,7 @@ import type {
   Source,
 } from "./types";
 import { cosineSimilarity } from "./utils";
+import { createHash } from "crypto";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "store", "knowledge.json");
@@ -37,8 +39,8 @@ export async function loadStore(): Promise<KnowledgeStore> {
   try {
     const raw = await fs.readFile(STORE_PATH, "utf8");
     const parsed = JSON.parse(raw) as { version?: number };
-    const needsMigrate = parsed?.version !== 3;
-    const store = migrateStoreToV3(parsed);
+    const needsMigrate = parsed?.version !== 4;
+    const store = migrateStoreToV4(parsed);
     if (needsMigrate) await saveStore(store);
     return store;
   } catch {
@@ -51,8 +53,9 @@ export async function loadStore(): Promise<KnowledgeStore> {
 export async function saveStore(store: KnowledgeStore): Promise<void> {
   await ensureDirs();
   store.updatedAt = new Date().toISOString();
-  store.version = 3;
+  store.version = 4;
   if (!Array.isArray(store.relations)) store.relations = [];
+  if (!Array.isArray(store.attachments)) store.attachments = [];
   await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
@@ -163,12 +166,60 @@ export async function writeRawSource(
   return relative;
 }
 
+/** Copy Telegram export media into data/sources/<sourceId>/media/… */
+export async function materializeAttachments(input: {
+  sourceId: string;
+  attachments: Attachment[];
+  exportDir?: string;
+}): Promise<Attachment[]> {
+  if (!input.attachments.length) return [];
+  const mediaRoot = path.join(SOURCES_DIR, input.sourceId, "media");
+  await fs.mkdir(mediaRoot, { recursive: true });
+
+  const out: Attachment[] = [];
+  for (const att of input.attachments) {
+    const next = { ...att, sourceId: input.sourceId };
+    const ref = att.telegramFileRef?.replace(/^[/\\]+/, "").replace(/\\/g, "/");
+    if (input.exportDir && ref) {
+      const src = path.resolve(input.exportDir, ref);
+      const exportRoot = path.resolve(input.exportDir);
+      if (!src.startsWith(exportRoot + path.sep) && src !== exportRoot) {
+        // path escape — keep metadata only
+        out.push(next);
+        continue;
+      }
+      try {
+        const st = await fs.stat(src);
+        if (st.isFile()) {
+          const destRel = ref;
+          const destAbs = path.join(mediaRoot, destRel);
+          await fs.mkdir(path.dirname(destAbs), { recursive: true });
+          await fs.copyFile(src, destAbs);
+          const buf = await fs.readFile(destAbs);
+          next.storedPath = path.join("data", "sources", input.sourceId, "media", destRel);
+          next.byteSize = buf.length;
+          next.sha256 = createHash("sha256").update(buf).digest("hex");
+          if (!next.originalName || next.originalName === "media") {
+            next.originalName = path.basename(destRel);
+          }
+        }
+      } catch {
+        // missing file in export — keep attachment metadata
+      }
+    }
+    out.push(next);
+  }
+  return out;
+}
+
 export async function commitIngest(result: {
   store: KnowledgeStore;
   source: Source;
   chunks: Chunk[];
   facts: Fact[];
   peopleTouched: Person[];
+  attachments?: Attachment[];
+  exportDir?: string;
   rawContent: string;
   rawFilename: string;
 }): Promise<KnowledgeStore> {
@@ -183,6 +234,9 @@ export async function commitIngest(result: {
   if (existing) {
     store.chunks = store.chunks.filter((c) => c.sourceId !== existing.id);
     store.facts = store.facts.filter((f) => f.sourceId !== existing.id);
+    store.attachments = (store.attachments || []).filter(
+      (a) => a.sourceId !== existing.id,
+    );
     store.sources = store.sources.filter((s) => s.id !== existing.id);
     for (const p of store.people) {
       p.sourceIds = p.sourceIds.filter((id) => id !== existing.id);
@@ -209,11 +263,23 @@ export async function commitIngest(result: {
     person.updatedAt = new Date().toISOString();
   }
 
+  const attachments = await materializeAttachments({
+    sourceId: result.source.id,
+    attachments: result.attachments || [],
+    exportDir: result.exportDir,
+  });
+
   result.source.chunkIds = result.chunks.map((c) => c.id);
   result.source.factIds = result.facts.map((f) => f.id);
+  result.source.meta = {
+    ...result.source.meta,
+    attachmentIds: attachments.map((a) => a.id),
+    mediaCount: attachments.length,
+  };
   store.sources.unshift(result.source);
   store.chunks.push(...result.chunks);
   store.facts.push(...result.facts);
+  store.attachments.push(...attachments);
 
   for (const fact of result.facts) {
     if (fact.kind === "theme" || fact.kind === "context") {
@@ -227,6 +293,13 @@ export async function commitIngest(result: {
 
   await saveStore(store);
   return store;
+}
+
+export async function listAttachments(sourceId?: string) {
+  const store = await loadStore();
+  const all = store.attachments || [];
+  if (!sourceId) return all;
+  return all.filter((a) => a.sourceId === sourceId);
 }
 
 export async function searchKnowledge(query: string, limit = 8) {
@@ -249,7 +322,8 @@ export async function getSource(id: string) {
   const chunks = store.chunks.filter((c) => c.sourceId === id);
   const facts = store.facts.filter((f) => f.sourceId === id);
   const people = store.people.filter((p) => source.personIds.includes(p.id));
-  return { source, chunks, facts, people };
+  const attachments = (store.attachments || []).filter((a) => a.sourceId === id);
+  return { source, chunks, facts, people, attachments };
 }
 
 export async function getPerson(idOrName: string) {
@@ -420,6 +494,7 @@ export async function listStats() {
       sources: store.sources.length,
       chunks: store.chunks.length,
       facts: store.facts.length,
+      attachments: (store.attachments || []).length,
       openFacts: open.length,
       openTasks: open.filter((f) => f.kind === "task").length,
       openDecisions: open.filter((f) => f.kind === "decision").length,

@@ -19,6 +19,7 @@ export async function GET() {
       ingestedAt: s.ingestedAt,
       chunkCount: s.chunkIds.length,
       factCount: s.factIds.length,
+      mediaCount: s.meta?.mediaCount ?? 0,
     })),
   });
 }
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     let title: string | undefined;
     let markPeerClose: boolean | undefined;
     let syncPalace: boolean | undefined;
+    let exportDir: string | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
@@ -57,6 +59,10 @@ export async function POST(request: Request) {
       if (typeof closeField === "string") {
         markPeerClose = closeField === "true" || closeField === "1";
       }
+      const exportField = form.get("exportDir");
+      if (typeof exportField === "string" && exportField.trim()) {
+        exportDir = exportField.trim();
+      }
     } else {
       const body = await request.json();
       text = String(body.text || body.markdown || "");
@@ -68,6 +74,9 @@ export async function POST(request: Request) {
       }
       if (typeof body.syncPalace === "boolean") {
         syncPalace = body.syncPalace;
+      }
+      if (typeof body.exportDir === "string" && body.exportDir.trim()) {
+        exportDir = body.exportDir.trim();
       }
     }
 
@@ -85,6 +94,7 @@ export async function POST(request: Request) {
       title,
       markPeerClose,
       syncPalace,
+      exportDir,
     });
 
     return NextResponse.json({
@@ -99,6 +109,7 @@ export async function POST(request: Request) {
       },
       chunkCount: result.chunkCount,
       factCount: result.factCount,
+      attachmentCount: result.attachmentCount,
       people: result.people.map((p) => ({
         id: p.id,
         name: p.canonicalName,
