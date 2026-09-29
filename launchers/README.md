@@ -2,25 +2,36 @@
 
 ## Windows — ярлык на рабочий стол
 
-С облачной VM агент **не может** записать файл на твой Windows Desktop.  
-Сделай один раз у себя на ПК (репозиторий должен лежать локально):
-
-1. Склонируй / открой проект на Windows (лучше через **WSL**, там полный стек).
-2. В PowerShell из корня репо:
+1. Репо локально + Node **внутри WSL Ubuntu**.
+2. PowerShell из корня репо:
 
 ```powershell
+git pull origin main
 powershell -ExecutionPolicy Bypass -File .\launchers\install-windows-shortcut.ps1
 ```
 
-3. На рабочем столе появится **«Смысл Jarvis»** — дальше один двойной клик.
+3. На Desktop: **Smysl Jarvis** — двойной клик.
 
-Что делает ярлык: поднимает стек (через WSL → `npm run jarvis`, иначе Git Bash / Next) и открывает `http://127.0.0.1:3847/jarvis`.
+Что делает ярлык:
+- открывает видимое окно лаунчера + окно **Smysl stack (WSL)** с `npm run dev:all` (сессия не убивается);
+- ждёт `http://127.0.0.1:3847/jarvis`;
+- открывает браузер Windows.
+
+Если не встало:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\launchers\diagnose.ps1
+```
+
+Логи: `%TEMP%\smysl-launch.log`, в WSL `/tmp/smysl-launch/wsl-boot.log`.
 
 | Файл | Назначение |
 |---|---|
 | `install-windows-shortcut.ps1` | ставит `.lnk` на Desktop |
-| `Запуск Смысл.vbs` | тихий старт (без мигающей консоли) |
-| `Запуск Смысл.bat` / `start-smysl.bat` | логика запуска |
+| `start-smysl.vbs` | вход ярлыка (консоль видна) |
+| `start-smysl-wsl.bat` | WSL boot + wait + browser |
+| `diagnose.ps1` | диагностика |
+| `../scripts/wsl-boot.sh` | foreground `dev:all` в Ubuntu |
 | `smysl-jarvis.desktop` | Linux |
 
 ## Linux
