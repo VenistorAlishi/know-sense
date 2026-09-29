@@ -25,17 +25,17 @@ export default function IngestPage() {
           <code className="rounded bg-[var(--paper-soft)] px-1">ChatExport_*</code>
         </li>
         <li>
-          Через CLI (WSL):{" "}
+          Упакуйте папку(и){" "}
+          <code className="rounded bg-[var(--paper-soft)] px-1">ChatExport_*</code>{" "}
+          в <code className="rounded bg-[var(--paper-soft)] px-1">.zip</code> и
+          загрузите ниже — или CLI:{" "}
           <code className="rounded bg-[var(--paper-soft)] px-1 text-xs">
-            npm run ingest -- --type telegram /path/to/ChatExport_*
-          </code>{" "}
-          — подтянет JSON и скопирует файлы в{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">data/sources/…/media</code>
+            npm run ingest -- chats.zip
+          </code>
         </li>
         <li>
-          Либо загрузите один{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">result.json</code>{" "}
-          ниже (медиа без папки экспорта останутся метаданными)
+          Медиа копируются в{" "}
+          <code className="rounded bg-[var(--paper-soft)] px-1">data/sources/…/media</code>
         </li>
       </ol>
 

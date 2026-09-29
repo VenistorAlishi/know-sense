@@ -1,9 +1,20 @@
+import { promises as fs } from "fs";
+import path from "path";
 import { NextResponse } from "next/server";
 import { ingestSource } from "@/lib/ingest";
 import { listStats } from "@/lib/store";
+import { rmTempQuiet, unzipToTemp } from "@/lib/ingest/unzip-export";
 import type { SourceType } from "@/lib/types";
 
 export const runtime = "nodejs";
+/** Allow large ChatExport zip uploads (media-heavy). */
+export const maxDuration = 300;
+
+const TMP_BASE = path.join(process.cwd(), "data", "tmp");
+
+function isZipFilename(name: string): boolean {
+  return name.toLowerCase().endsWith(".zip");
+}
 
 export async function GET() {
   const { counts, self, store } = await listStats();
@@ -25,6 +36,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let tmpDir: string | undefined;
   try {
     const contentType = request.headers.get("content-type") || "";
     let text = "";
@@ -34,17 +46,22 @@ export async function POST(request: Request) {
     let markPeerClose: boolean | undefined;
     let syncPalace: boolean | undefined;
     let exportDir: string | undefined;
+    let zipBuffer: Buffer | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
       const file = form.get("file");
-      if (file && typeof file === "object" && "text" in file) {
+      if (file && typeof file === "object" && "arrayBuffer" in file) {
         const f = file as File;
-        text = await f.text();
         filename = f.name || filename;
+        if (isZipFilename(filename)) {
+          zipBuffer = Buffer.from(await f.arrayBuffer());
+        } else {
+          text = await f.text();
+        }
       }
       const textField = form.get("text");
-      if (!text && typeof textField === "string") text = textField;
+      if (!text && !zipBuffer && typeof textField === "string") text = textField;
       const name = form.get("filename");
       if (typeof name === "string" && name.trim()) filename = name.trim();
       const typeField = form.get("type");
@@ -63,6 +80,10 @@ export async function POST(request: Request) {
       if (typeof exportField === "string" && exportField.trim()) {
         exportDir = exportField.trim();
       }
+      const syncField = form.get("syncPalace");
+      if (typeof syncField === "string") {
+        syncPalace = syncField === "true" || syncField === "1";
+      }
     } else {
       const body = await request.json();
       text = String(body.text || body.markdown || "");
@@ -78,11 +99,80 @@ export async function POST(request: Request) {
       if (typeof body.exportDir === "string" && body.exportDir.trim()) {
         exportDir = body.exportDir.trim();
       }
+      // Optional: base64 zip from CLI helper
+      if (typeof body.zipBase64 === "string" && body.zipBase64) {
+        zipBuffer = Buffer.from(body.zipBase64, "base64");
+        if (!isZipFilename(filename)) filename = "chats.zip";
+      }
+    }
+
+    // --- ZIP path: one or many ChatExport folders ---
+    if (zipBuffer) {
+      await fs.mkdir(TMP_BASE, { recursive: true });
+      const unpacked = await unzipToTemp(zipBuffer, TMP_BASE);
+      tmpDir = unpacked.tmpDir;
+
+      const results = [];
+      for (const exp of unpacked.exports) {
+        const jsonText = await fs.readFile(exp.resultJsonPath, "utf8");
+        const result = await ingestSource({
+          text: jsonText,
+          filename: path.basename(exp.resultJsonPath),
+          type:
+            type === "auto" || type === "telegram_chat"
+              ? "telegram_chat"
+              : type,
+          title: title || exp.titleHint,
+          markPeerClose:
+            markPeerClose ??
+            (type === "telegram_chat" || type === "auto" || !type),
+          syncPalace,
+          exportDir: exp.exportDir,
+        });
+        results.push({
+          source: {
+            id: result.source.id,
+            type: result.source.type,
+            title: result.source.title,
+            summary: result.source.summary,
+            participants: result.source.participants,
+            meta: result.source.meta,
+          },
+          chunkCount: result.chunkCount,
+          factCount: result.factCount,
+          attachmentCount: result.attachmentCount,
+          people: result.people.map((p) => ({
+            id: p.id,
+            name: p.canonicalName,
+            relationToSelf: p.relationToSelf,
+            isSelf: p.isSelf,
+          })),
+          palace: result.palace ?? null,
+        });
+      }
+
+      const first = results[0];
+      return NextResponse.json({
+        ok: true,
+        zip: true,
+        exportCount: results.length,
+        // Back-compat single-source fields = first export
+        source: first.source,
+        chunkCount: first.chunkCount,
+        factCount: first.factCount,
+        attachmentCount: first.attachmentCount,
+        people: first.people,
+        palace: first.palace,
+        results,
+      });
     }
 
     if (!text.trim()) {
       return NextResponse.json(
-        { error: "Пустой источник. Передайте file или text." },
+        {
+          error:
+            "Пустой источник. Передайте file (result.json / .zip), text или zip.",
+        },
         { status: 400 },
       );
     }
@@ -124,5 +214,7 @@ export async function POST(request: Request) {
       { error: "Не удалось загрузить источник", detail: String(error) },
       { status: 500 },
     );
+  } finally {
+    if (tmpDir) await rmTempQuiet(tmpDir);
   }
 }

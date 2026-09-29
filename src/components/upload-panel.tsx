@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 
 const TYPES = [
   { value: "auto", label: "Авто" },
-  { value: "telegram_chat", label: "Telegram JSON" },
+  { value: "telegram_chat", label: "Telegram JSON / ZIP" },
   { value: "meeting", label: "Встреча (.md)" },
   { value: "note", label: "Заметка" },
   { value: "file", label: "Файл/текст" },
@@ -34,6 +34,26 @@ export function UploadPanel({ compact = false }: { compact?: boolean }) {
     const data = await res.json();
     if (!res.ok) {
       setError(data.error || data.detail || "Ошибка загрузки");
+      return;
+    }
+    if (data.zip && Array.isArray(data.results)) {
+      const totalMedia = data.results.reduce(
+        (n: number, r: { attachmentCount?: number }) =>
+          n + (r.attachmentCount || 0),
+        0,
+      );
+      const totalChunks = data.results.reduce(
+        (n: number, r: { chunkCount?: number }) => n + (r.chunkCount || 0),
+        0,
+      );
+      setOk(
+        `ZIP: ${data.exportCount} чат(ов) · ${totalChunks} чанков · ${totalMedia} медиа`,
+      );
+      startTransition(() => {
+        const firstId = data.results[0]?.source?.id || data.source?.id;
+        if (firstId) router.push(`/sources/${firstId}`);
+        router.refresh();
+      });
       return;
     }
     const media =
@@ -80,11 +100,11 @@ export function UploadPanel({ compact = false }: { compact?: boolean }) {
 
       <label className="block">
         <span className="mb-2 block text-sm text-[var(--muted)]">
-          Файл (result.json / .md / .txt)
+          Файл: result.json, папка как .zip, или .md / .txt
         </span>
         <input
           type="file"
-          accept=".json,.md,.txt,application/json,text/markdown,text/plain"
+          accept=".json,.zip,.md,.txt,application/json,application/zip,text/markdown,text/plain"
           disabled={pending}
           className="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--accent)] file:px-4 file:py-2 file:font-medium file:text-[var(--ink)] hover:file:brightness-110"
           onChange={(e) => {
@@ -92,11 +112,23 @@ export function UploadPanel({ compact = false }: { compact?: boolean }) {
             if (!file) return;
             const fd = new FormData();
             fd.append("file", file);
-            fd.append("type", type);
+            fd.append(
+              "type",
+              file.name.toLowerCase().endsWith(".zip")
+                ? "telegram_chat"
+                : type,
+            );
             fd.append("markPeerClose", markClose ? "true" : "false");
             void ingest(fd);
           }}
         />
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          ZIP: одна или несколько папок ChatExport_* (JSON + photos/voice/…).
+          Большие архивы удобнее через CLI:{" "}
+          <code className="rounded bg-[var(--paper-soft)] px-1">
+            npm run ingest -- chats.zip
+          </code>
+        </p>
       </label>
 
       <div>
@@ -123,7 +155,7 @@ export function UploadPanel({ compact = false }: { compact?: boolean }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={compact ? 6 : 10}
-          placeholder='Telegram Desktop → Export chat history → JSON. Вставьте содержимое result.json…'
+          placeholder="Telegram Desktop → Export chat history → JSON. Или загрузите .zip папки ChatExport_* выше…"
           className="w-full resize-y rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-3 py-2 text-sm leading-relaxed text-[var(--ink)] outline-none ring-[var(--accent)] placeholder:text-[var(--muted)] focus:ring-2"
         />
       </div>

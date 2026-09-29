@@ -108,14 +108,17 @@ UI: [/jarvis](http://127.0.0.1:3847/jarvis) — command deck + embedding-кар�
 4. Спросите в [/chat](http://127.0.0.1:3847/chat): «о чём мы с Анной?»
 
 ```bash
-# Папка ChatExport_* (JSON + media) — предпочтительно
+# ZIP одной или нескольких папок ChatExport_* (JSON + media)
+npm run ingest -- ~/Downloads/chats.zip
+
+# Или папка напрямую
 npm run ingest -- --type telegram /mnt/c/Users/KIRILL/Music/ChatExport_2026-09-28
 
-# Или несколько result.json
-npm run ingest -- --type telegram \
-  data/fixtures/tg-media/result.json
+# Или result.json
+npm run ingest -- --type telegram data/fixtures/tg-media/result.json
 ```
 
+В UI: [/ingest](http://127.0.0.1:3847/ingest) → выбрать `.zip` / `result.json`.  
 Список вложений: `GET /api/attachments?sourceId=…`
 
 ## Смена эмбеддера
