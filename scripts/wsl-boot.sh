@@ -43,12 +43,15 @@ fi
 
 echo "[$(date -Iseconds)] ensuring palace venv + embeddinggemma…"
 if ! bash "$ROOT/scripts/ensure-embeddinggemma.sh"; then
-  echo "ERROR: setup:embed failed. See messages above."
-  echo "If you are on /mnt/c, copy the repo into the Linux home and retry:"
-  echo "  rsync -a --exclude node_modules '$ROOT/' \"\$HOME/know-sense/\""
-  echo "  cd \"\$HOME/know-sense\" && npm install && npm run setup:embed && npm run jarvis"
-  sleep 60
-  exit 1
+  echo "[$(date -Iseconds)] ensure failed — running full repair-wsl.sh…"
+  if ! bash "$ROOT/scripts/repair-wsl.sh"; then
+    echo "ERROR: repair failed. See messages above."
+    echo "Fallback: copy repo off /mnt/c into Linux home:"
+    echo "  rsync -a --exclude node_modules --exclude services/palace/.venv '$ROOT/' \"\$HOME/know-sense/\""
+    echo "  cd \"\$HOME/know-sense\" && bash scripts/repair-wsl.sh && npm run jarvis"
+    sleep 90
+    exit 1
+  fi
 fi
 
 echo "[$(date -Iseconds)] starting npm run dev:all"
