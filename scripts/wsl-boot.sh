@@ -41,5 +41,15 @@ if curl -sf --max-time 2 "http://127.0.0.1:3847/jarvis" >/dev/null 2>&1 \
   echo "[$(date -Iseconds)] stack went down — restarting"
 fi
 
+echo "[$(date -Iseconds)] ensuring palace venv + embeddinggemma…"
+if ! bash "$ROOT/scripts/ensure-embeddinggemma.sh"; then
+  echo "ERROR: setup:embed failed. See messages above."
+  echo "If you are on /mnt/c, copy the repo into the Linux home and retry:"
+  echo "  rsync -a --exclude node_modules '$ROOT/' \"\$HOME/know-sense/\""
+  echo "  cd \"\$HOME/know-sense\" && npm install && npm run setup:embed && npm run jarvis"
+  sleep 60
+  exit 1
+fi
+
 echo "[$(date -Iseconds)] starting npm run dev:all"
 exec npm run dev:all

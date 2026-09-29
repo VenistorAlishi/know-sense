@@ -18,7 +18,12 @@ MARKER = "MEMPALACE_EMBEDDINGGEMMA_DIR"
 def find_embedding_py() -> Path:
     spec = importlib.util.find_spec("mempalace.embedding")
     if spec is None or not spec.origin:
-        raise SystemExit("mempalace.embedding not installed")
+        raise SystemExit(
+            "mempalace.embedding not installed in this Python.\n"
+            "  Fix: rm -rf services/palace/.venv && npm run setup:embed\n"
+            "  If the project lives under /mnt/c/..., copy it to ~/know-sense first "
+            "(venvs on Windows mounts often break)."
+        )
     return Path(spec.origin)
 
 
