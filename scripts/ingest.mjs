@@ -1,22 +1,25 @@
 #!/usr/bin/env node
-import { readFileSync } from "fs";
-import { basename, resolve } from "path";
+import { existsSync, readFileSync, statSync } from "fs";
+import { basename, join, resolve } from "path";
 
 const args = process.argv.slice(2);
 let type = "auto";
-const files = [];
+const inputs = [];
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--type") {
     type = args[++i] || "auto";
   } else {
-    files.push(args[i]);
+    inputs.push(args[i]);
   }
 }
 
-if (!files.length) {
+if (!inputs.length) {
   console.error(
     "Usage: npm run ingest -- [--type telegram|meeting|note|file|auto] <path> [more paths...]",
+  );
+  console.error(
+    "  <path> may be result.json or a ChatExport_* folder containing result.json",
   );
   process.exit(1);
 }
@@ -26,29 +29,64 @@ const port = process.env.PORT || 3847;
 const normalizedType =
   type === "telegram" ? "telegram_chat" : type;
 
-for (const file of files) {
-  const absolute = resolve(file);
+/** Resolve ChatExport folder → result.json (or keep file path). */
+function resolveSourcePath(input) {
+  const absolute = resolve(input);
+  if (!existsSync(absolute)) {
+    throw new Error(`Path not found: ${absolute}`);
+  }
+  const st = statSync(absolute);
+  if (st.isDirectory()) {
+    const candidates = [
+      join(absolute, "result.json"),
+      join(absolute, "messages.json"),
+    ];
+    const hit = candidates.find((p) => existsSync(p));
+    if (!hit) {
+      throw new Error(
+        `No result.json in folder: ${absolute}\nExpected Telegram Desktop JSON export.`,
+      );
+    }
+    return hit;
+  }
+  return absolute;
+}
+
+for (const input of inputs) {
+  const absolute = resolveSourcePath(input);
   const text = readFileSync(absolute, "utf8");
+  const inferredTelegram =
+    normalizedType === "auto" &&
+    (basename(absolute) === "result.json" ||
+      /ChatExport_/i.test(input) ||
+      text.includes('"messages"'));
+
+  const sendType =
+    normalizedType === "auto" && inferredTelegram
+      ? "telegram_chat"
+      : normalizedType;
+
   const res = await fetch(`http://127.0.0.1:${port}/api/ingest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text,
       filename: basename(absolute),
-      type: normalizedType,
-      markPeerClose:
-        normalizedType === "telegram_chat" || normalizedType === "auto",
+      type: sendType,
+      markPeerClose: sendType === "telegram_chat" || sendType === "auto",
+      syncPalace: true,
     }),
   });
   const data = await res.json();
   if (!res.ok) {
-    console.error(file, data);
+    console.error(input, data);
     process.exit(1);
   }
   console.log(
     JSON.stringify(
       {
-        file,
+        input,
+        file: absolute,
         sourceId: data.source.id,
         title: data.source.title,
         type: data.source.type,
