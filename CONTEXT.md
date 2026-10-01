@@ -15,9 +15,11 @@ Ubiquitous language for agents (see skill `domain-modeling`).
 | **Jarvis** | Primary HUD at `/jarvis` (map + command bar) |
 | **ChatExport** | Telegram Desktop JSON export folder (`result.json` + media dirs) |
 | **deriveStatus** | Pipeline state for ASR/OCR on an Attachment |
+| **Connector** | Live integration (calendar, mail, drive, voice) with tokens + sync jobs |
 
 ## Non-goals (for now)
 
 - Multi-tenant auth
 - Full multimodal embedding of raw video bytes
 - Cloud-only LLM requirement (Ollama / extractive fallback OK)
+- Replacing Obsidian as a writing vault (coexist / import later)

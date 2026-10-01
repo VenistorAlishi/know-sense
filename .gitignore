@@ -44,6 +44,7 @@ next-env.d.ts
 # local knowledge store and ingested raw sources
 /data/store/knowledge.json
 /data/store/llm-settings.json
+/data/store/connectors.json
 /data/sources/*
 !/data/sources/.gitkeep
 /data/tmp/

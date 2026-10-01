@@ -153,6 +153,31 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 - `scripts/setup-local-ai.sh` / `remine-palace.sh` / `dev-all.sh`
 - UI: `/jarvis`, `/`, `/chat`, `/open`, `/people`, `/sources`, `/ingest`
 
+## Коннекторы
+
+Каркас live-интеграций: токены в `data/store/connectors.json`, UI на [/settings/connectors](http://127.0.0.1:3847/settings/connectors).
+
+| Коннектор | Статус |
+|---|---|
+| **Голос** | `POST /api/ingest/voice` + UI на `/ingest#voice` (Whisper local / OpenAI) |
+| **Google Calendar** | OAuth → Sync событий → Sources `calendar` |
+| **Google Drive** | stub (следующий срез) |
+| **Яндекс.Почта** | stub (следующий срез) |
+
+```bash
+# Google Calendar
+# 1) Создай OAuth client (Web) в Google Cloud, redirect:
+#    http://127.0.0.1:3847/api/connectors/google-calendar/callback
+# 2) В .env.local: GOOGLE_CLIENT_ID=… GOOGLE_CLIENT_SECRET=…
+# 3) Открой /settings/connectors → Подключить → Sync
+
+# Голос (CLI)
+curl -F file=@note.ogg http://127.0.0.1:3847/api/ingest/voice
+# ASR: pip install faster-whisper  OR  whisper CLI  OR  OPENAI_API_KEY
+```
+
+**Почему не Obsidian:** Obsidian — vault/редактор заметок; Смысл — person-centric память, факты, TG-медиа, vector recall и live-коннекторы. Могут жить рядом (позже — импорт `.md` из vault).
+
 ## Agent Skills
 
 Project skills live in [`.cursor/skills/`](.cursor/skills/) (sources: [SOURCES.md](.cursor/skills/SOURCES.md)).  

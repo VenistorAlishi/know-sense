@@ -73,8 +73,17 @@ Do **not** skip non-text TG messages. Prefer `deriveStatus: pending` over invent
 4. Add/adjust fixture under `data/fixtures/tg-media`
 5. Verify with `npm run ingest -- data/fixtures/tg-media` (server must be up)
 
+## Connectors
+
+- Registry: `src/lib/connectors/` (`connectors.json` tokens + sync jobs)
+- UI: `/settings/connectors`
+- Voice: `POST /api/ingest/voice` → Attachment + transcript chunk (`scripts/transcribe_whisper.py` / whisper CLI / OpenAI)
+- Google Calendar: OAuth at `/api/connectors/google-calendar/auth` + `POST …/sync`
+- Yandex Mail / Google Drive: stubs via `syncStub`
+
 ## Out of scope unless requested
 
-- Whisper ASR / OCR pipelines (slots exist on Attachment)
+- Full OCR pipelines
 - Replacing Tauri with Electron
-- Auth / multi-user
+- Multi-user auth
+- Obsidian bidirectional sync (import .md later OK)

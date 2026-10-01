@@ -5,6 +5,10 @@ export type SourceType =
   | "meeting"
   | "note"
   | "file"
+  | "email"
+  | "calendar"
+  | "drive"
+  | "voice_note"
   | "other";
 
 export type ChunkKind =

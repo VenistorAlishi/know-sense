@@ -1,4 +1,6 @@
 import { UploadPanel } from "@/components/upload-panel";
+import { VoiceUpload } from "@/components/voice-upload";
+import Link from "next/link";
 
 export default function IngestPage() {
   return (
@@ -8,34 +10,29 @@ export default function IngestPage() {
           Universal ingest
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
-          Загружайте источники в персональную базу Кирилла. Приоритет — экспорты
-          Telegram Desktop в JSON (
-          <code className="rounded bg-[var(--paper-soft)] px-1">result.json</code>
-          ). Store v4 учитывает медиа: фото, voice, video, documents, stickers и
-          др. — как{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">Attachment</code>{" "}
-          + chunks <code className="rounded bg-[var(--paper-soft)] px-1">media_ref</code>.
+          Telegram JSON/ZIP, заметки и{" "}
+          <a href="#voice" className="underline">
+            голосовые
+          </a>
+          . Live-синк календаря/почты — в{" "}
+          <Link href="/settings/connectors" className="underline">
+            коннекторах
+          </Link>
+          .
         </p>
       </div>
 
+      <VoiceUpload />
+
       <ol className="list-decimal space-y-2 pl-5 text-sm text-[var(--ink-soft)]">
-        <li>Telegram Desktop → Export chat history → формат JSON</li>
+        <li>Telegram Desktop → Export chat history → JSON (+ медиа)</li>
         <li>
-          Лучше экспортировать <strong>с медиа</strong> в папку{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">ChatExport_*</code>
-        </li>
-        <li>
-          Упакуйте папку(и){" "}
+          ZIP папок{" "}
           <code className="rounded bg-[var(--paper-soft)] px-1">ChatExport_*</code>{" "}
-          в <code className="rounded bg-[var(--paper-soft)] px-1">.zip</code> и
-          загрузите ниже — или CLI:{" "}
+          или CLI{" "}
           <code className="rounded bg-[var(--paper-soft)] px-1 text-xs">
             npm run ingest -- chats.zip
           </code>
-        </li>
-        <li>
-          Медиа копируются в{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">data/sources/…/media</code>
         </li>
       </ol>
 

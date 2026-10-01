@@ -37,6 +37,9 @@ export function SiteHeader() {
           <Link href="/extract" className="hover:text-[var(--ink)]">
             Extract
           </Link>
+          <Link href="/settings/connectors" className="hover:text-[var(--ink)]">
+            Коннекторы
+          </Link>
           <Link href="/settings" className="hover:text-[var(--ink)]">
             API
           </Link>

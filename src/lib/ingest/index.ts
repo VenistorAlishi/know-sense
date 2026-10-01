@@ -49,6 +49,21 @@ export async function ingestSource(input: IngestInput): Promise<IngestResult> {
     markPeerClose: input.markPeerClose ?? type === "telegram_chat",
   };
 
+  const plainType =
+    type === "note" ||
+    type === "file" ||
+    type === "other" ||
+    type === "email" ||
+    type === "calendar" ||
+    type === "drive" ||
+    type === "voice_note"
+      ? type === "voice_note" || type === "calendar" || type === "email" || type === "drive"
+        ? "note"
+        : type === "note" || type === "other"
+          ? type
+          : "file"
+      : "file";
+
   const built =
     type === "telegram_chat"
       ? ingestTelegram(input.text, ctx)
@@ -58,13 +73,19 @@ export async function ingestSource(input: IngestInput): Promise<IngestResult> {
             attachments: [] as Attachment[],
           }
         : {
-            ...ingestPlainText(
-              input.text,
-              ctx,
-              type === "note" ? "note" : type === "other" ? "other" : "file",
-            ),
+            ...ingestPlainText(input.text, ctx, plainType),
             attachments: [] as Attachment[],
           };
+
+  // Preserve semantic source.type even when body parser used note/file pipeline
+  if (
+    type === "voice_note" ||
+    type === "calendar" ||
+    type === "email" ||
+    type === "drive"
+  ) {
+    built.source.type = type;
+  }
 
   if (input.exportDir) {
     built.source.meta = {
