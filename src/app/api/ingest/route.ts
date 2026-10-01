@@ -122,7 +122,8 @@ export async function POST(request: Request) {
             type === "auto" || type === "telegram_chat"
               ? "telegram_chat"
               : type,
-          title: title || exp.titleHint,
+          // Prefer chat name from result.json; only use explicit UI title
+          title,
           markPeerClose:
             markPeerClose ??
             (type === "telegram_chat" || type === "auto" || !type),
