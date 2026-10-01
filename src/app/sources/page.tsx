@@ -8,6 +8,10 @@ const TYPE_LABEL: Record<string, string> = {
   meeting: "Встреча",
   note: "Заметка",
   file: "Файл",
+  email: "Почта",
+  calendar: "Календарь",
+  drive: "Drive",
+  voice_note: "Голос",
   other: "Другое",
 };
 
@@ -22,7 +26,7 @@ export default async function SourcesPage() {
             Источники
           </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Чаты, встречи, заметки и любые текстовые материалы в одной базе.
+            Чаты, встречи, почта, заметки и любые текстовые материалы в одной базе.
           </p>
         </div>
         <Link

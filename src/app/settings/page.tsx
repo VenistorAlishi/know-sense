@@ -11,29 +11,44 @@ export default function SettingsPage() {
           Настройки
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          LLM для чата и{" "}
+          LLM для чата и коннекторы:{" "}
+          <Link
+            href="/mail"
+            className="underline decoration-[var(--accent)]"
+          >
+            почта
+          </Link>
+          ,{" "}
           <Link
             href="/settings/connectors"
             className="underline decoration-[var(--accent)]"
           >
-            коннекторы
-          </Link>{" "}
-          (календарь, голос, почта/Drive — каркас).
+            календарь / голос
+          </Link>
+          .
         </p>
       </div>
 
       <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)]/80 p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg text-[var(--ink)]">Коннекторы</h2>
-          <Link
-            href="/settings/connectors"
-            className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
-          >
-            Открыть
-          </Link>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg text-[var(--ink)]">Почта и коннекторы</h2>
+          <div className="flex gap-2">
+            <Link
+              href="/mail"
+              className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--ink)]"
+            >
+              Почта
+            </Link>
+            <Link
+              href="/settings/connectors"
+              className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
+            >
+              Все
+            </Link>
+          </div>
         </div>
         <p className="text-sm text-[var(--muted)]">
-          Google Calendar OAuth, загрузка голосовых, заготовки Яндекс.Почта / Google Drive.
+          Яндекс.Почта (IMAP), Google Calendar OAuth, голос / ASR. Google Drive — заготовка.
         </p>
       </div>
 

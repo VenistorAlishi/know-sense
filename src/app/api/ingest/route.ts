@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { ingestSource } from "@/lib/ingest";
 import { listStats } from "@/lib/store";
 import { rmTempQuiet, unzipToTemp } from "@/lib/ingest/unzip-export";
-import type { SourceType } from "@/lib/types";
+import type { SourceMeta, SourceType } from "@/lib/types";
 
 export const runtime = "nodejs";
 /** Allow large ChatExport zip uploads (media-heavy). */
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     let markPeerClose: boolean | undefined;
     let syncPalace: boolean | undefined;
     let exportDir: string | undefined;
+    let meta: Partial<SourceMeta> | undefined;
     let zipBuffer: Buffer | undefined;
 
     if (contentType.includes("multipart/form-data")) {
@@ -98,6 +99,9 @@ export async function POST(request: Request) {
       }
       if (typeof body.exportDir === "string" && body.exportDir.trim()) {
         exportDir = body.exportDir.trim();
+      }
+      if (body.meta && typeof body.meta === "object") {
+        meta = body.meta as Partial<SourceMeta>;
       }
       // Optional: base64 zip from CLI helper
       if (typeof body.zipBase64 === "string" && body.zipBase64) {
@@ -186,6 +190,7 @@ export async function POST(request: Request) {
       markPeerClose,
       syncPalace,
       exportDir,
+      meta,
     });
 
     return NextResponse.json({

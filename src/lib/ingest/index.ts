@@ -1,4 +1,4 @@
-import type { Attachment, SourceType } from "../types";
+import type { Attachment, SourceMeta, SourceType } from "../types";
 import { detectSourceType } from "./detect";
 import { ingestTelegram } from "./telegram";
 import { ingestMeetingMarkdown } from "./meeting";
@@ -20,6 +20,8 @@ export interface IngestInput {
   syncPalace?: boolean;
   /** Absolute path to Telegram ChatExport_* folder (for media copy). */
   exportDir?: string;
+  /** Extra source.meta fields (email headers, etc.). */
+  meta?: Partial<SourceMeta>;
 }
 
 export interface IngestResult {
@@ -87,10 +89,11 @@ export async function ingestSource(input: IngestInput): Promise<IngestResult> {
     built.source.type = type;
   }
 
-  if (input.exportDir) {
+  if (input.exportDir || input.meta) {
     built.source.meta = {
       ...built.source.meta,
-      exportDir: input.exportDir,
+      ...(input.meta || {}),
+      ...(input.exportDir ? { exportDir: input.exportDir } : {}),
     };
   }
 

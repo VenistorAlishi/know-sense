@@ -161,7 +161,7 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 |---|---|
 | **Голос** | Upload `POST /api/ingest/voice` + **ASR backfill** Sync для pending TG voice/audio |
 | **Google Calendar** | OAuth → Sync событий → Sources `calendar` |
-| **Яндекс.Почта** | IMAP + пароль приложения → Sources `email` |
+| **Яндекс.Почта** | UI [/mail](http://127.0.0.1:3847/mail) · IMAP + пароль приложения → Sources `email` |
 | **Google Drive** | stub (следующий срез) |
 
 ```bash

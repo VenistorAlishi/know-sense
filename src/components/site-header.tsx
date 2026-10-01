@@ -31,6 +31,9 @@ export function SiteHeader() {
           <Link href="/sources" className="hover:text-[var(--ink)]">
             Источники
           </Link>
+          <Link href="/mail" className="hover:text-[var(--ink)]">
+            Почта
+          </Link>
           <Link href="/ingest" className="hover:text-[var(--ink)]">
             Ingest
           </Link>

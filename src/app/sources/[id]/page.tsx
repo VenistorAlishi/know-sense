@@ -5,6 +5,18 @@ import { getSource } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
+const TYPE_LABEL: Record<string, string> = {
+  telegram_chat: "Telegram",
+  meeting: "Встреча",
+  note: "Заметка",
+  file: "Файл",
+  email: "Почта",
+  calendar: "Календарь",
+  drive: "Drive",
+  voice_note: "Голос",
+  other: "Другое",
+};
+
 export default async function SourceDetailPage({
   params,
 }: {
@@ -14,23 +26,54 @@ export default async function SourceDetailPage({
   const detail = await getSource(id);
   if (!detail) notFound();
   const { source, chunks, facts, people } = detail;
+  const isEmail = source.type === "email";
 
   return (
     <article className="space-y-10">
       <header className="space-y-3">
         <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-          {source.type}
+          {TYPE_LABEL[source.type] || source.type}
           {source.meta.messageCount != null
             ? ` · ${source.meta.messageCount} сообщ.`
             : ""}
+          {isEmail && source.meta.emailDate
+            ? ` · ${new Date(source.meta.emailDate).toLocaleString("ru-RU")}`
+            : ""}
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight text-[var(--ink)] sm:text-4xl">
-          {source.title}
+          {source.title.replace(/^✉\s*/, "")}
         </h1>
-        <p className="max-w-3xl text-base leading-relaxed text-[var(--ink-soft)]">
-          {source.summary}
-        </p>
+        {isEmail && (source.meta.emailFrom || source.meta.emailTo) ? (
+          <dl className="grid gap-1 text-sm text-[var(--ink-soft)] sm:grid-cols-[auto_1fr] sm:gap-x-3">
+            {source.meta.emailFrom ? (
+              <>
+                <dt className="text-[var(--muted)]">От</dt>
+                <dd>{source.meta.emailFrom}</dd>
+              </>
+            ) : null}
+            {source.meta.emailTo ? (
+              <>
+                <dt className="text-[var(--muted)]">Кому</dt>
+                <dd>{source.meta.emailTo}</dd>
+              </>
+            ) : null}
+          </dl>
+        ) : (
+          <p className="max-w-3xl text-base leading-relaxed text-[var(--ink-soft)]">
+            {source.summary}
+          </p>
+        )}
         <PeopleStrip people={people} />
+        {isEmail ? (
+          <p>
+            <Link
+              href="/mail"
+              className="text-sm text-[var(--accent-deep)] hover:underline"
+            >
+              ← к почте
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <section>

@@ -28,14 +28,28 @@ type Job = {
   detail?: string;
 };
 
+function statusLabel(status: string): string {
+  switch (status) {
+    case "connected":
+      return "подключено";
+    case "needs_auth":
+      return "нужен доступ";
+    case "error":
+      return "ошибка";
+    case "available":
+      return "доступно";
+    default:
+      return status;
+  }
+}
+
 export default function ConnectorsPage() {
   const [rows, setRows] = useState<ConnectorRow[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [yandexUser, setYandexUser] = useState("");
-  const [yandexPass, setYandexPass] = useState("");
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const res = await fetch("/api/connectors");
@@ -46,13 +60,7 @@ export default function ConnectorsPage() {
     }
     setRows(data.connectors || []);
     setJobs(data.jobs || []);
-    const yandex = (data.connectors || []).find(
-      (c: ConnectorRow) => c.id === "yandex-mail",
-    );
-    if (yandex?.accountHint && !yandexUser) {
-      setYandexUser(yandex.accountHint);
-    }
-  }, [yandexUser]);
+  }, []);
 
   useEffect(() => {
     void reload();
@@ -68,38 +76,25 @@ export default function ConnectorsPage() {
   function sync(id: string) {
     setError(null);
     setMsg(null);
+    setSyncingId(id);
     startTransition(async () => {
-      const res = await fetch(`/api/connectors/${id}/sync`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok || data.ok === false) {
-        setError(data.job?.errors?.[0] || data.detail || data.error || "Sync error");
-      } else {
-        setMsg(
-          `${id}: импортировано ${data.job?.imported ?? 0}` +
-            (data.job?.detail ? ` · ${data.job.detail}` : ""),
-        );
+      try {
+        const res = await fetch(`/api/connectors/${id}/sync`, { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || data.ok === false) {
+          setError(
+            data.job?.errors?.[0] || data.detail || data.error || "Sync error",
+          );
+        } else {
+          setMsg(
+            `${id}: импортировано ${data.job?.imported ?? 0}` +
+              (data.job?.detail ? ` · ${data.job.detail}` : ""),
+          );
+        }
+        await reload();
+      } finally {
+        setSyncingId(null);
       }
-      await reload();
-    });
-  }
-
-  function saveYandex() {
-    setError(null);
-    setMsg(null);
-    startTransition(async () => {
-      const res = await fetch("/api/connectors/yandex-mail/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: yandexUser, appPassword: yandexPass }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.detail || data.error || "Не удалось сохранить");
-      } else {
-        setMsg(`Яндекс.Почта подключена: ${data.user}`);
-        setYandexPass("");
-      }
-      await reload();
     });
   }
 
@@ -116,9 +111,15 @@ export default function ConnectorsPage() {
           Коннекторы
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
-          Голос (upload + ASR backfill), Google Calendar (OAuth), Яндекс.Почта (IMAP +
-          пароль приложения). Google Drive — заготовка. Токены в{" "}
-          <code className="rounded bg-[var(--paper-soft)] px-1">data/store/connectors.json</code>.
+          Голос, календарь, почта. Почта вынесена на отдельную страницу{" "}
+          <Link href="/mail" className="text-[var(--accent-deep)] underline">
+            /mail
+          </Link>
+          . Токены в{" "}
+          <code className="rounded bg-[var(--paper-soft)] px-1">
+            data/store/connectors.json
+          </code>
+          .
         </p>
       </div>
 
@@ -144,52 +145,14 @@ export default function ConnectorsPage() {
                 <h2 className="text-lg text-[var(--ink)]">{c.title}</h2>
                 <p className="mt-1 text-sm text-[var(--muted)]">{c.description}</p>
                 <p className="mt-2 text-xs text-[var(--ink-soft)]">
-                  status: <strong>{c.status}</strong>
+                  {statusLabel(c.status)}
                   {c.accountHint ? ` · ${c.accountHint}` : ""}
-                  {c.lastSyncAt ? ` · sync ${c.lastSyncAt}` : ""}
-                  {c.lastSyncStatus ? ` · ${c.lastSyncStatus}` : ""}
+                  {c.lastSyncAt
+                    ? ` · ${new Date(c.lastSyncAt).toLocaleString("ru-RU")}`
+                    : ""}
                 </p>
                 {c.lastError && (
                   <p className="mt-1 text-xs text-[var(--danger)]">{c.lastError}</p>
-                )}
-
-                {c.id === "yandex-mail" && (
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    <label className="block text-xs text-[var(--muted)]">
-                      Email
-                      <input
-                        type="email"
-                        value={yandexUser}
-                        onChange={(e) => setYandexUser(e.target.value)}
-                        placeholder="you@yandex.ru"
-                        className="mt-1 w-full rounded-md border border-[var(--line)] bg-[var(--paper)] px-2 py-1.5 text-sm text-[var(--ink)]"
-                        autoComplete="username"
-                      />
-                    </label>
-                    <label className="block text-xs text-[var(--muted)]">
-                      Пароль приложения
-                      <input
-                        type="password"
-                        value={yandexPass}
-                        onChange={(e) => setYandexPass(e.target.value)}
-                        placeholder="из id.yandex.ru"
-                        className="mt-1 w-full rounded-md border border-[var(--line)] bg-[var(--paper)] px-2 py-1.5 text-sm text-[var(--ink)]"
-                        autoComplete="current-password"
-                      />
-                    </label>
-                    <p className="sm:col-span-2 text-xs text-[var(--muted)]">
-                      Создай пароль приложения: Яндекс ID → Безопасность → Пароли приложений →
-                      Почта. Либо задай{" "}
-                      <code className="rounded bg-[var(--paper-soft)] px-1">
-                        YANDEX_MAIL_USER
-                      </code>{" "}
-                      /{" "}
-                      <code className="rounded bg-[var(--paper-soft)] px-1">
-                        YANDEX_MAIL_APP_PASSWORD
-                      </code>{" "}
-                      в .env.local.
-                    </p>
-                  </div>
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
@@ -210,23 +173,27 @@ export default function ConnectorsPage() {
                   </Link>
                 )}
                 {c.id === "yandex-mail" && (
+                  <Link
+                    href="/mail"
+                    className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
+                  >
+                    Открыть почту
+                  </Link>
+                )}
+                {c.id !== "yandex-mail" && (
                   <button
                     type="button"
-                    disabled={pending || !yandexUser || !yandexPass}
-                    onClick={saveYandex}
-                    className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)] disabled:opacity-40"
+                    disabled={pending}
+                    onClick={() => sync(c.id)}
+                    className="rounded-md border border-[var(--line)] px-3 py-1.5 text-sm disabled:opacity-40"
                   >
-                    {c.configured ? "Обновить пароль" : "Подключить"}
+                    {syncingId === c.id
+                      ? "…"
+                      : c.id === "voice"
+                        ? "ASR backfill"
+                        : "Sync"}
                   </button>
                 )}
-                <button
-                  type="button"
-                  disabled={pending || (c.id === "yandex-mail" && !c.configured)}
-                  onClick={() => sync(c.id)}
-                  className="rounded-md border border-[var(--line)] px-3 py-1.5 text-sm disabled:opacity-40"
-                >
-                  {pending ? "…" : c.id === "voice" ? "ASR backfill" : "Sync"}
-                </button>
               </div>
             </div>
           </li>
@@ -239,8 +206,8 @@ export default function ConnectorsPage() {
           <ul className="mt-2 space-y-2 text-xs text-[var(--muted)]">
             {jobs.map((j, i) => (
               <li key={`${j.connectorId}-${j.startedAt}-${i}`}>
-                {j.finishedAt} · {j.connectorId} · {j.status} · +{j.imported} / skip{" "}
-                {j.skipped}
+                {new Date(j.finishedAt).toLocaleString("ru-RU")} · {j.connectorId} ·{" "}
+                {j.status} · +{j.imported} / skip {j.skipped}
                 {j.detail ? ` · ${j.detail}` : ""}
               </li>
             ))}

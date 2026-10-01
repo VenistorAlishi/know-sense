@@ -85,6 +85,11 @@ export interface SourceMeta {
   mediaCount?: number;
   textMessageCount?: number;
   attachmentIds?: string[];
+  /** Email connector fields */
+  emailFrom?: string;
+  emailTo?: string;
+  emailDate?: string;
+  emailMessageId?: string;
 }
 
 export interface Source {

@@ -216,8 +216,15 @@ export async function syncYandexMail(opts?: {
             text,
             filename: `${key}.md`,
             type: "email",
-            title: `✉ ${subject}`,
+            title: subject,
             syncPalace: true,
+            meta: {
+              emailFrom: from || undefined,
+              emailTo: to || undefined,
+              emailDate: date,
+              emailMessageId: parsed.messageId || undefined,
+              peerName: from || undefined,
+            },
           });
           seen.add(key);
           imported += 1;
