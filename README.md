@@ -152,3 +152,8 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 - `desktop/` — Tauri 2 shell (Jarvis window)
 - `scripts/setup-local-ai.sh` / `remine-palace.sh` / `dev-all.sh`
 - UI: `/jarvis`, `/`, `/chat`, `/open`, `/people`, `/sources`, `/ingest`
+
+## Agent Skills
+
+Project skills live in [`.cursor/skills/`](.cursor/skills/) (sources: [SOURCES.md](.cursor/skills/SOURCES.md)).  
+Domain glossary: [`CONTEXT.md`](CONTEXT.md). Invoke with `/skill-name` in Agent chat (e.g. `/smysl-knowledge-base`, `/tdd`).
