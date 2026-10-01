@@ -9,6 +9,7 @@ export type SourceType =
   | "calendar"
   | "drive"
   | "voice_note"
+  | "obsidian"
   | "other";
 
 export type ChunkKind =
@@ -94,6 +95,10 @@ export interface SourceMeta {
   driveFileId?: string;
   driveMime?: string;
   driveLink?: string;
+  /** Obsidian vault fields */
+  obsidianPath?: string;
+  obsidianHash?: string;
+  obsidianTags?: string[];
 }
 
 export interface Source {

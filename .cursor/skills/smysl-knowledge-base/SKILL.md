@@ -81,6 +81,7 @@ Do **not** skip non-text TG messages. Prefer `deriveStatus: pending` over invent
 - Google: shared OAuth at `/api/connectors/google/auth` (Calendar + Drive scopes); UI `/google`
 - Google Calendar sync → Sources `calendar`; Drive sync → Docs/Sheets/text → Sources `drive` (`GOOGLE_DRIVE_FOLDER_ID` optional)
 - Yandex Mail: IMAP app password (`YANDEX_MAIL_*` or UI `/mail`) → Sources `email`
+- Obsidian: one-way vault `.md` import (`OBSIDIAN_VAULT_PATH` or UI `/obsidian`) → Sources `obsidian`; skips `.obsidian`/`.trash`; re-sync updates by content hash
 
 ## Out of scope unless requested
 

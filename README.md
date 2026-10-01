@@ -162,6 +162,7 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 | **Голос** | Upload `POST /api/ingest/voice` + **ASR backfill** Sync для pending TG voice/audio |
 | **Google Calendar + Drive** | UI [/google](http://127.0.0.1:3847/google) · общий OAuth → Sources `calendar` / `drive` |
 | **Яндекс.Почта** | UI [/mail](http://127.0.0.1:3847/mail) · IMAP + пароль приложения → Sources `email` |
+| **Obsidian** | UI [/obsidian](http://127.0.0.1:3847/obsidian) · односторонний импорт `.md` vault → Sources `obsidian` |
 
 ```bash
 # Google (Calendar + Drive)
@@ -180,6 +181,11 @@ curl -X POST http://127.0.0.1:3847/api/connectors/voice/sync
 # 1) Пароль приложения: id.yandex.ru → Безопасность → Пароли приложений → Почта
 # 2) .env.local: YANDEX_MAIL_USER=… YANDEX_MAIL_APP_PASSWORD=…  или форма на /mail
 # 3) Забрать письма → Sources type=email
+
+# Obsidian (one-way)
+# 1) /obsidian → путь к vault  ИЛИ  OBSIDIAN_VAULT_PATH=…
+# 2) Импортировать заметки → Sources type=obsidian
+# Fixture: data/fixtures/obsidian-vault
 ```
 
 **Почему не Obsidian:** Obsidian — vault/редактор заметок; Смысл — person-centric память, факты, TG-медиа, vector recall и live-коннекторы. Могут жить рядом (позже — импорт `.md` из vault).

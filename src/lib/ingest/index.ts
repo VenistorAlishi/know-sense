@@ -58,8 +58,13 @@ export async function ingestSource(input: IngestInput): Promise<IngestResult> {
     type === "email" ||
     type === "calendar" ||
     type === "drive" ||
-    type === "voice_note"
-      ? type === "voice_note" || type === "calendar" || type === "email" || type === "drive"
+    type === "voice_note" ||
+    type === "obsidian"
+      ? type === "voice_note" ||
+        type === "calendar" ||
+        type === "email" ||
+        type === "drive" ||
+        type === "obsidian"
         ? "note"
         : type === "note" || type === "other"
           ? type
@@ -84,7 +89,8 @@ export async function ingestSource(input: IngestInput): Promise<IngestResult> {
     type === "voice_note" ||
     type === "calendar" ||
     type === "email" ||
-    type === "drive"
+    type === "drive" ||
+    type === "obsidian"
   ) {
     built.source.type = type;
   }

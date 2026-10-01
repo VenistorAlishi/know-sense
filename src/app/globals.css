@@ -71,3 +71,15 @@ body {
 .google-row {
   animation: mail-fade-up 0.45s ease-out both;
 }
+
+.obsidian-hero {
+  animation: mail-fade-up 0.55s ease-out both;
+}
+
+.obsidian-panel {
+  animation: mail-fade-up 0.6s ease-out 0.08s both;
+}
+
+.obsidian-row {
+  animation: mail-fade-up 0.45s ease-out both;
+}

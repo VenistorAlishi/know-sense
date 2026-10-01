@@ -14,6 +14,7 @@ const TYPE_LABEL: Record<string, string> = {
   calendar: "Календарь",
   drive: "Drive",
   voice_note: "Голос",
+  obsidian: "Obsidian",
   other: "Другое",
 };
 
@@ -29,6 +30,7 @@ export default async function SourceDetailPage({
   const isEmail = source.type === "email";
   const isDrive = source.type === "drive";
   const isCalendar = source.type === "calendar";
+  const isObsidian = source.type === "obsidian";
 
   return (
     <article className="space-y-10">
@@ -84,6 +86,25 @@ export default async function SourceDetailPage({
               </>
             ) : null}
           </dl>
+        ) : isObsidian ? (
+          <dl className="grid gap-1 text-sm text-[var(--ink-soft)] sm:grid-cols-[auto_1fr] sm:gap-x-3">
+            {source.meta.obsidianPath ? (
+              <>
+                <dt className="text-[var(--muted)]">Файл</dt>
+                <dd className="font-mono text-xs sm:text-sm">
+                  {source.meta.obsidianPath}
+                </dd>
+              </>
+            ) : null}
+            {(source.meta.obsidianTags?.length || 0) > 0 ? (
+              <>
+                <dt className="text-[var(--muted)]">Теги</dt>
+                <dd>
+                  {source.meta.obsidianTags!.map((t) => `#${t}`).join(" · ")}
+                </dd>
+              </>
+            ) : null}
+          </dl>
         ) : (
           <p className="max-w-3xl text-base leading-relaxed text-[var(--ink-soft)]">
             {source.summary}
@@ -107,6 +128,16 @@ export default async function SourceDetailPage({
               className="text-sm text-[var(--accent-deep)] hover:underline"
             >
               ← к Google
+            </Link>
+          </p>
+        ) : null}
+        {isObsidian ? (
+          <p>
+            <Link
+              href="/obsidian"
+              className="text-sm text-[var(--accent-deep)] hover:underline"
+            >
+              ← к Obsidian
             </Link>
           </p>
         ) : null}

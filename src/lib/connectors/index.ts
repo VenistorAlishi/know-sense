@@ -13,6 +13,12 @@ import {
   yandexMailConfigured,
   saveYandexMailCredentials,
 } from "./yandex-mail";
+import {
+  syncObsidian,
+  obsidianConfigured,
+  saveObsidianVaultPath,
+  vaultPathFrom,
+} from "./obsidian";
 import { backfillPendingAudio } from "./voice";
 import { syncStub } from "./stubs";
 import type { ConnectorId, SyncJobResult } from "./types";
@@ -37,6 +43,9 @@ export async function listConnectorStatus() {
     if (entry.id === "yandex-mail" && !status) {
       status = yandexMailConfigured(conn) ? "connected" : "available";
     }
+    if (entry.id === "obsidian" && !status) {
+      status = obsidianConfigured(conn) ? "connected" : "available";
+    }
     return {
       ...entry,
       status: status || "available",
@@ -49,7 +58,9 @@ export async function listConnectorStatus() {
           ? conn?.tokens?.meta?.user || process.env.YANDEX_MAIL_USER || undefined
           : entry.id === "google-drive" && process.env.GOOGLE_DRIVE_FOLDER_ID
             ? `folder ${process.env.GOOGLE_DRIVE_FOLDER_ID}`
-            : undefined,
+            : entry.id === "obsidian"
+              ? vaultPathFrom(conn) || undefined
+              : undefined,
       configured:
         entry.id === "voice"
           ? true
@@ -57,7 +68,9 @@ export async function listConnectorStatus() {
             ? googleConfigured()
             : entry.id === "yandex-mail"
               ? yandexMailConfigured(conn)
-              : false,
+              : entry.id === "obsidian"
+                ? obsidianConfigured(conn)
+                : false,
     };
   });
 }
@@ -72,6 +85,7 @@ export async function runConnectorSync(
   if (id === "google-drive") return syncGoogleDrive();
   if (id === "voice") return backfillPendingAudio();
   if (id === "yandex-mail") return syncYandexMail();
+  if (id === "obsidian") return syncObsidian();
   return syncStub(id);
 }
 
@@ -92,3 +106,9 @@ export {
   yandexMailConfigured,
   saveYandexMailCredentials,
 } from "./yandex-mail";
+export {
+  syncObsidian,
+  obsidianConfigured,
+  saveObsidianVaultPath,
+  vaultPathFrom,
+} from "./obsidian";

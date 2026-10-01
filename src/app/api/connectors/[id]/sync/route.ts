@@ -10,6 +10,7 @@ const IDS: ConnectorId[] = [
   "google-drive",
   "yandex-mail",
   "voice",
+  "obsidian",
 ];
 
 export async function POST(

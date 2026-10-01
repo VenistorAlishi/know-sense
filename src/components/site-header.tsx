@@ -37,6 +37,9 @@ export function SiteHeader() {
           <Link href="/google" className="hover:text-[var(--ink)]">
             Google
           </Link>
+          <Link href="/obsidian" className="hover:text-[var(--ink)]">
+            Obsidian
+          </Link>
           <Link href="/ingest" className="hover:text-[var(--ink)]">
             Ingest
           </Link>

@@ -2,7 +2,8 @@ export type ConnectorId =
   | "google-calendar"
   | "google-drive"
   | "yandex-mail"
-  | "voice";
+  | "voice"
+  | "obsidian";
 
 export type ConnectorStatus =
   | "available"

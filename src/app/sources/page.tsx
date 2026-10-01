@@ -12,6 +12,7 @@ const TYPE_LABEL: Record<string, string> = {
   calendar: "Календарь",
   drive: "Drive",
   voice_note: "Голос",
+  obsidian: "Obsidian",
   other: "Другое",
 };
 

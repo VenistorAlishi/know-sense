@@ -21,6 +21,13 @@ export default function SettingsPage() {
           </Link>
           ,{" "}
           <Link
+            href="/obsidian"
+            className="underline decoration-[var(--accent)]"
+          >
+            Obsidian
+          </Link>
+          ,{" "}
+          <Link
             href="/settings/connectors"
             className="underline decoration-[var(--accent)]"
           >
@@ -47,6 +54,12 @@ export default function SettingsPage() {
               Google
             </Link>
             <Link
+              href="/obsidian"
+              className="rounded-md border border-[var(--line)] px-3 py-1.5 text-sm"
+            >
+              Obsidian
+            </Link>
+            <Link
               href="/settings/connectors"
               className="rounded-md border border-[var(--line)] px-3 py-1.5 text-sm"
             >
@@ -55,7 +68,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <p className="text-sm text-[var(--muted)]">
-          Яндекс.Почта (IMAP), Google Calendar + Drive (общий OAuth), голос / ASR.
+          Почта, Google Calendar/Drive, Obsidian vault (one-way), голос / ASR.
         </p>
       </div>
 

@@ -119,6 +119,10 @@ export default function ConnectorsPage() {
           <Link href="/mail" className="text-[var(--accent-deep)] underline">
             почта
           </Link>
+          ,{" "}
+          <Link href="/obsidian" className="text-[var(--accent-deep)] underline">
+            Obsidian
+          </Link>
           . Токены в{" "}
           <code className="rounded bg-[var(--paper-soft)] px-1">
             data/store/connectors.json
@@ -182,6 +186,14 @@ export default function ConnectorsPage() {
                     className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
                   >
                     Открыть почту
+                  </Link>
+                )}
+                {c.id === "obsidian" && (
+                  <Link
+                    href="/obsidian"
+                    className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
+                  >
+                    Открыть Obsidian
                   </Link>
                 )}
                 {c.id === "voice" && (

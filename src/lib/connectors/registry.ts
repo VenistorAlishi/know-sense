@@ -31,6 +31,13 @@ export const CONNECTOR_CATALOG: ConnectorCatalogEntry[] = [
       "IMAP (пароль приложения) → Sources типа email. Папка INBOX, инкремент по UID.",
     auth: "password",
   },
+  {
+    id: "obsidian",
+    title: "Obsidian",
+    description:
+      "Односторонний импорт .md из локального vault (без .obsidian/.trash). Путь в UI или OBSIDIAN_VAULT_PATH.",
+    auth: "local",
+  },
 ];
 
 export function catalogEntry(id: ConnectorId): ConnectorCatalogEntry | undefined {
