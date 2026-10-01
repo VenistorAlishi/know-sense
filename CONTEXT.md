@@ -22,4 +22,4 @@ Ubiquitous language for agents (see skill `domain-modeling`).
 - Multi-tenant auth
 - Full multimodal embedding of raw video bytes
 - Cloud-only LLM requirement (Ollama / extractive fallback OK)
-- Replacing Obsidian as a writing vault (coexist / import later)
+- Replacing Obsidian as a writing vault (coexist; one-way import via `/obsidian`)
