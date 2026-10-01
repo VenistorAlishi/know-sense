@@ -1,6 +1,12 @@
 import { CONNECTOR_CATALOG, catalogEntry } from "./registry";
 import { loadConnectors, getConnection, upsertConnection } from "./store";
 import { syncGoogleCalendar, googleCalendarConfigured } from "./google-calendar";
+import {
+  syncYandexMail,
+  yandexMailConfigured,
+  saveYandexMailCredentials,
+} from "./yandex-mail";
+import { backfillPendingAudio } from "./voice";
 import { syncStub } from "./stubs";
 import type { ConnectorId, SyncJobResult } from "./types";
 
@@ -13,7 +19,10 @@ export async function listConnectorStatus() {
     if (entry.id === "google-calendar" && !status) {
       status = googleCalendarConfigured() ? "needs_auth" : "available";
     }
-    if ((entry.id === "google-drive" || entry.id === "yandex-mail") && !status) {
+    if (entry.id === "yandex-mail" && !status) {
+      status = yandexMailConfigured(conn) ? "connected" : "available";
+    }
+    if (entry.id === "google-drive" && !status) {
       status = "available";
     }
     return {
@@ -23,12 +32,18 @@ export async function listConnectorStatus() {
       lastSyncAt: conn?.lastSyncAt,
       lastSyncStatus: conn?.lastSyncStatus,
       lastError: conn?.lastError,
+      accountHint:
+        entry.id === "yandex-mail"
+          ? conn?.tokens?.meta?.user || process.env.YANDEX_MAIL_USER || undefined
+          : undefined,
       configured:
         entry.id === "voice"
           ? true
           : entry.id === "google-calendar"
             ? googleCalendarConfigured()
-            : false,
+            : entry.id === "yandex-mail"
+              ? yandexMailConfigured(conn)
+              : false,
     };
   });
 }
@@ -40,20 +55,8 @@ export async function runConnectorSync(
   if (!entry) throw new Error(`Unknown connector: ${id}`);
   await upsertConnection({ id, enabled: true });
   if (id === "google-calendar") return syncGoogleCalendar();
-  if (id === "voice") {
-    const startedAt = new Date().toISOString();
-    const finishedAt = new Date().toISOString();
-    return {
-      connectorId: "voice",
-      status: "ok",
-      imported: 0,
-      skipped: 0,
-      errors: [],
-      startedAt,
-      finishedAt,
-      detail: "Voice is push-based — POST /api/ingest/voice",
-    };
-  }
+  if (id === "voice") return backfillPendingAudio();
+  if (id === "yandex-mail") return syncYandexMail();
   return syncStub(id);
 }
 
@@ -63,4 +66,9 @@ export {
   exchangeGoogleCode,
   googleCalendarConfigured,
 } from "./google-calendar";
-export { ingestVoiceNote, transcribeAudio } from "./voice";
+export { ingestVoiceNote, transcribeAudio, backfillPendingAudio } from "./voice";
+export {
+  syncYandexMail,
+  yandexMailConfigured,
+  saveYandexMailCredentials,
+} from "./yandex-mail";

@@ -159,10 +159,10 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 
 | Коннектор | Статус |
 |---|---|
-| **Голос** | `POST /api/ingest/voice` + UI на `/ingest#voice` (Whisper local / OpenAI) |
+| **Голос** | Upload `POST /api/ingest/voice` + **ASR backfill** Sync для pending TG voice/audio |
 | **Google Calendar** | OAuth → Sync событий → Sources `calendar` |
+| **Яндекс.Почта** | IMAP + пароль приложения → Sources `email` |
 | **Google Drive** | stub (следующий срез) |
-| **Яндекс.Почта** | stub (следующий срез) |
 
 ```bash
 # Google Calendar
@@ -171,9 +171,16 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 # 2) В .env.local: GOOGLE_CLIENT_ID=… GOOGLE_CLIENT_SECRET=…
 # 3) Открой /settings/connectors → Подключить → Sync
 
-# Голос (CLI)
+# Голос (CLI) + backfill pending TG audio
 curl -F file=@note.ogg http://127.0.0.1:3847/api/ingest/voice
+curl -X POST http://127.0.0.1:3847/api/connectors/voice/sync
 # ASR: pip install faster-whisper  OR  whisper CLI  OR  OPENAI_API_KEY
+
+# Яндекс.Почта
+# 1) Пароль приложения: id.yandex.ru → Безопасность → Пароли приложений → Почта
+# 2) .env.local: YANDEX_MAIL_USER=… YANDEX_MAIL_APP_PASSWORD=…
+#    или форма на /settings/connectors
+# 3) Sync → письма INBOX за ~14 дней → Sources type=email
 ```
 
 **Почему не Obsidian:** Obsidian — vault/редактор заметок; Смысл — person-centric память, факты, TG-медиа, vector recall и live-коннекторы. Могут жить рядом (позже — импорт `.md` из vault).

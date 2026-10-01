@@ -64,6 +64,6 @@ export interface ConnectorCatalogEntry {
   id: ConnectorId;
   title: string;
   description: string;
-  auth: "oauth2" | "local" | "none";
+  auth: "oauth2" | "local" | "none" | "password";
   scopes?: string[];
 }

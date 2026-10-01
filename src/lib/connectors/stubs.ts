@@ -11,9 +11,7 @@ export async function syncStub(id: ConnectorId): Promise<SyncJobResult> {
     imported: 0,
     skipped: 0,
     errors: [
-      id === "yandex-mail"
-        ? "Яндекс.Почта: каркас готов. Нужны YANDEX_CLIENT_ID/SECRET + IMAP sync (следующий срез)."
-        : "Google Drive: каркас готов. Нужен folder picker + Docs export (следующий срез).",
+      "Google Drive: каркас готов. Нужен folder picker + Docs export (следующий срез).",
     ],
     startedAt,
     finishedAt,

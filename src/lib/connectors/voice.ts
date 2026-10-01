@@ -4,6 +4,9 @@ import path from "path";
 import { spawn } from "child_process";
 import { ingestSource } from "@/lib/ingest";
 import { materializeAttachments, loadStore, saveStore } from "@/lib/store";
+import { makeChunk } from "@/lib/ingest/helpers";
+import { pushJob, upsertConnection } from "./store";
+import type { SyncJobResult } from "./types";
 import type { Attachment } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -219,4 +222,120 @@ export async function ingestVoiceNote(input: {
     transcript,
     engine,
   };
+}
+
+/**
+ * Transcribe Attachment rows with deriveStatus=pending (TG voice/audio etc.).
+ * Creates transcript chunks and marks attachments done/failed.
+ */
+export async function backfillPendingAudio(opts?: {
+  limit?: number;
+}): Promise<SyncJobResult> {
+  const startedAt = new Date().toISOString();
+  const limit = opts?.limit ?? 25;
+  const errors: string[] = [];
+  let imported = 0;
+  let skipped = 0;
+
+  const store = await loadStore();
+  const pending = (store.attachments || [])
+    .filter(
+      (a) =>
+        a.deriveStatus === "pending" &&
+        (a.kind === "voice" || a.kind === "audio" || a.kind === "video_note") &&
+        a.storedPath,
+    )
+    .slice(0, limit);
+
+  if (!pending.length) {
+    const finishedAt = new Date().toISOString();
+    const job: SyncJobResult = {
+      connectorId: "voice",
+      status: "ok",
+      imported: 0,
+      skipped: 0,
+      errors: [],
+      startedAt,
+      finishedAt,
+      detail: "No pending voice/audio attachments",
+    };
+    await upsertConnection({
+      id: "voice",
+      status: "connected",
+      lastSyncAt: finishedAt,
+      lastSyncStatus: "ok",
+    });
+    await pushJob(job);
+    return job;
+  }
+
+  for (const att of pending) {
+    const abs = path.isAbsolute(att.storedPath)
+      ? att.storedPath
+      : path.join(process.cwd(), att.storedPath);
+    try {
+      await fs.access(abs);
+      const { text, engine } = await transcribeAudio(abs);
+      if (!text.trim()) {
+        att.deriveStatus = "failed";
+        att.deriveError = "Empty transcript";
+        skipped += 1;
+        continue;
+      }
+      att.derivedText = text;
+      att.deriveStatus = "done";
+      att.deriveError = undefined;
+
+      const chunk = makeChunk({
+        sourceId: att.sourceId,
+        text,
+        title: `Транскрипт ${att.kind}${att.timestamp ? ` ${att.timestamp}` : ""}`,
+        kind: "transcript",
+        timestamp: att.timestamp,
+        personIds: att.personIds.length ? att.personIds : [],
+        attachmentIds: [att.id],
+        telegramMessageId: att.messageId,
+      });
+      store.chunks.push(chunk);
+      const src = store.sources.find((s) => s.id === att.sourceId);
+      if (src && !src.chunkIds.includes(chunk.id)) {
+        src.chunkIds.push(chunk.id);
+        src.meta = { ...src.meta, extractedAt: engine };
+      }
+      // Link media_ref chunk if present
+      if (att.chunkId) {
+        const ref = store.chunks.find((c) => c.id === att.chunkId);
+        if (ref) {
+          ref.attachmentIds = [...new Set([...(ref.attachmentIds || []), att.id])];
+        }
+      }
+      imported += 1;
+    } catch (e) {
+      att.deriveStatus = "failed";
+      att.deriveError = String(e);
+      errors.push(`${att.id}: ${String(e)}`);
+    }
+  }
+
+  await saveStore(store);
+  const finishedAt = new Date().toISOString();
+  const job: SyncJobResult = {
+    connectorId: "voice",
+    status: errors.length && !imported ? "error" : "ok",
+    imported,
+    skipped,
+    errors: errors.slice(0, 20),
+    startedAt,
+    finishedAt,
+    detail: `ASR backfill ${imported}/${pending.length} (limit ${limit})`,
+  };
+  await upsertConnection({
+    id: "voice",
+    status: "connected",
+    lastSyncAt: finishedAt,
+    lastSyncStatus: job.status,
+    lastError: errors[0],
+  });
+  await pushJob(job);
+  return job;
 }

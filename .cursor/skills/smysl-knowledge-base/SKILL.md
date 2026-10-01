@@ -77,9 +77,10 @@ Do **not** skip non-text TG messages. Prefer `deriveStatus: pending` over invent
 
 - Registry: `src/lib/connectors/` (`connectors.json` tokens + sync jobs)
 - UI: `/settings/connectors`
-- Voice: `POST /api/ingest/voice` → Attachment + transcript chunk (`scripts/transcribe_whisper.py` / whisper CLI / OpenAI)
+- Voice: `POST /api/ingest/voice` → Attachment + transcript; Sync = ASR backfill for pending TG voice/audio (`scripts/transcribe_whisper.py` / whisper CLI / OpenAI)
 - Google Calendar: OAuth at `/api/connectors/google-calendar/auth` + `POST …/sync`
-- Yandex Mail / Google Drive: stubs via `syncStub`
+- Yandex Mail: IMAP app password (`YANDEX_MAIL_*` or UI) → Sources `email`; `POST /api/connectors/yandex-mail/credentials`
+- Google Drive: stub via `syncStub`
 
 ## Out of scope unless requested
 

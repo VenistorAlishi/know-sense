@@ -5,7 +5,7 @@ export const CONNECTOR_CATALOG: ConnectorCatalogEntry[] = [
     id: "voice",
     title: "Голос",
     description:
-      "Загрузка голосовых заметок: локальный Whisper → transcript в базу (Attachment + Chunk).",
+      "Загрузка голоса + Sync: ASR backfill для pending TG voice/audio (Whisper / OpenAI).",
     auth: "local",
   },
   {
@@ -25,9 +25,9 @@ export const CONNECTOR_CATALOG: ConnectorCatalogEntry[] = [
   {
     id: "yandex-mail",
     title: "Яндекс.Почта",
-    description: "Каркас: OAuth/IMAP ingest писем (следующий срез).",
-    auth: "oauth2",
-    scopes: ["mail:imap_ro"],
+    description:
+      "IMAP (пароль приложения) → Sources типа email. Папка INBOX, инкремент по UID.",
+    auth: "password",
   },
 ];
 
