@@ -248,9 +248,12 @@ export function MailPanel({ onSynced }: { onSynced?: () => void }) {
             {msg}
           </p>
         )}
-        {info?.lastError && !error && (
-          <p className="mt-2 text-xs text-[var(--danger)]">{info.lastError}</p>
-        )}
+        {info?.lastError &&
+          !error &&
+          info.status === "error" &&
+          !info.lastError.includes("YANDEX_MAIL") && (
+            <p className="mt-2 text-xs text-[var(--danger)]">{info.lastError}</p>
+          )}
       </div>
     </section>
   );
