@@ -111,9 +111,13 @@ export default function ConnectorsPage() {
           Коннекторы
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
-          Голос, календарь, почта. Почта вынесена на отдельную страницу{" "}
+          Голос,{" "}
+          <Link href="/google" className="text-[var(--accent-deep)] underline">
+            Google
+          </Link>
+          ,{" "}
           <Link href="/mail" className="text-[var(--accent-deep)] underline">
-            /mail
+            почта
           </Link>
           . Токены в{" "}
           <code className="rounded bg-[var(--paper-soft)] px-1">
@@ -156,13 +160,13 @@ export default function ConnectorsPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {c.id === "google-calendar" && (
-                  <a
-                    href="/api/connectors/google-calendar/auth"
+                {(c.id === "google-calendar" || c.id === "google-drive") && (
+                  <Link
+                    href="/google"
                     className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
                   >
-                    {c.status === "connected" ? "Переподключить" : "Подключить Google"}
-                  </a>
+                    Открыть Google
+                  </Link>
                 )}
                 {c.id === "voice" && (
                   <Link
@@ -180,18 +184,14 @@ export default function ConnectorsPage() {
                     Открыть почту
                   </Link>
                 )}
-                {c.id !== "yandex-mail" && (
+                {c.id === "voice" && (
                   <button
                     type="button"
                     disabled={pending}
                     onClick={() => sync(c.id)}
                     className="rounded-md border border-[var(--line)] px-3 py-1.5 text-sm disabled:opacity-40"
                   >
-                    {syncingId === c.id
-                      ? "…"
-                      : c.id === "voice"
-                        ? "ASR backfill"
-                        : "Sync"}
+                    {syncingId === c.id ? "…" : "ASR backfill"}
                   </button>
                 )}
               </div>

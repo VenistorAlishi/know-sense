@@ -34,6 +34,9 @@ export function SiteHeader() {
           <Link href="/mail" className="hover:text-[var(--ink)]">
             Почта
           </Link>
+          <Link href="/google" className="hover:text-[var(--ink)]">
+            Google
+          </Link>
           <Link href="/ingest" className="hover:text-[var(--ink)]">
             Ingest
           </Link>

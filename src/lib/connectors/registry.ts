@@ -11,14 +11,16 @@ export const CONNECTOR_CATALOG: ConnectorCatalogEntry[] = [
   {
     id: "google-calendar",
     title: "Google Calendar",
-    description: "OAuth + pull событий в Sources типа calendar и Facts kind=event.",
+    description:
+      "OAuth (общий с Drive) → события primary calendar → Sources calendar.",
     auth: "oauth2",
     scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
   },
   {
     id: "google-drive",
     title: "Google Drive",
-    description: "Каркас: pull выбранных папок/доков (следующий срез).",
+    description:
+      "OAuth (общий с Calendar) → Docs/Sheets/текст → Sources drive. Опционально GOOGLE_DRIVE_FOLDER_ID.",
     auth: "oauth2",
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
   },

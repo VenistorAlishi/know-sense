@@ -90,6 +90,10 @@ export interface SourceMeta {
   emailTo?: string;
   emailDate?: string;
   emailMessageId?: string;
+  /** Google Drive fields */
+  driveFileId?: string;
+  driveMime?: string;
+  driveLink?: string;
 }
 
 export interface Source {

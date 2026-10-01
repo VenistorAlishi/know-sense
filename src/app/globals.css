@@ -59,3 +59,15 @@ body {
 .mail-row {
   animation: mail-fade-up 0.45s ease-out both;
 }
+
+.google-hero {
+  animation: mail-fade-up 0.55s ease-out both;
+}
+
+.google-panel {
+  animation: mail-fade-up 0.6s ease-out 0.08s both;
+}
+
+.google-row {
+  animation: mail-fade-up 0.45s ease-out both;
+}

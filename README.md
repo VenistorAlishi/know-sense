@@ -160,16 +160,16 @@ curl -X POST http://127.0.0.1:3847/api/chat \
 | Коннектор | Статус |
 |---|---|
 | **Голос** | Upload `POST /api/ingest/voice` + **ASR backfill** Sync для pending TG voice/audio |
-| **Google Calendar** | OAuth → Sync событий → Sources `calendar` |
+| **Google Calendar + Drive** | UI [/google](http://127.0.0.1:3847/google) · общий OAuth → Sources `calendar` / `drive` |
 | **Яндекс.Почта** | UI [/mail](http://127.0.0.1:3847/mail) · IMAP + пароль приложения → Sources `email` |
-| **Google Drive** | stub (следующий срез) |
 
 ```bash
-# Google Calendar
-# 1) Создай OAuth client (Web) в Google Cloud, redirect:
-#    http://127.0.0.1:3847/api/connectors/google-calendar/callback
-# 2) В .env.local: GOOGLE_CLIENT_ID=… GOOGLE_CLIENT_SECRET=…
-# 3) Открой /settings/connectors → Подключить → Sync
+# Google (Calendar + Drive)
+# 1) Google Cloud: включи Calendar API + Drive API, OAuth Web client, redirect:
+#    http://127.0.0.1:3847/api/connectors/google/callback
+# 2) .env.local: GOOGLE_CLIENT_ID=… GOOGLE_CLIENT_SECRET=…
+#    опционально GOOGLE_DRIVE_FOLDER_ID=…
+# 3) Открой /google → Подключить → Забрать события / Забрать файлы
 
 # Голос (CLI) + backfill pending TG audio
 curl -F file=@note.ogg http://127.0.0.1:3847/api/ingest/voice
@@ -178,9 +178,8 @@ curl -X POST http://127.0.0.1:3847/api/connectors/voice/sync
 
 # Яндекс.Почта
 # 1) Пароль приложения: id.yandex.ru → Безопасность → Пароли приложений → Почта
-# 2) .env.local: YANDEX_MAIL_USER=… YANDEX_MAIL_APP_PASSWORD=…
-#    или форма на /settings/connectors
-# 3) Sync → письма INBOX за ~14 дней → Sources type=email
+# 2) .env.local: YANDEX_MAIL_USER=… YANDEX_MAIL_APP_PASSWORD=…  или форма на /mail
+# 3) Забрать письма → Sources type=email
 ```
 
 **Почему не Obsidian:** Obsidian — vault/редактор заметок; Смысл — person-centric память, факты, TG-медиа, vector recall и live-коннекторы. Могут жить рядом (позже — импорт `.md` из vault).

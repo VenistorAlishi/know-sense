@@ -12,18 +12,19 @@ export default function SettingsPage() {
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
           LLM для чата и коннекторы:{" "}
-          <Link
-            href="/mail"
-            className="underline decoration-[var(--accent)]"
-          >
+          <Link href="/mail" className="underline decoration-[var(--accent)]">
             почта
+          </Link>
+          ,{" "}
+          <Link href="/google" className="underline decoration-[var(--accent)]">
+            Google
           </Link>
           ,{" "}
           <Link
             href="/settings/connectors"
             className="underline decoration-[var(--accent)]"
           >
-            календарь / голос
+            голос
           </Link>
           .
         </p>
@@ -40,15 +41,21 @@ export default function SettingsPage() {
               Почта
             </Link>
             <Link
-              href="/settings/connectors"
+              href="/google"
               className="rounded-md bg-[var(--ink)] px-3 py-1.5 text-sm text-[var(--paper)]"
+            >
+              Google
+            </Link>
+            <Link
+              href="/settings/connectors"
+              className="rounded-md border border-[var(--line)] px-3 py-1.5 text-sm"
             >
               Все
             </Link>
           </div>
         </div>
         <p className="text-sm text-[var(--muted)]">
-          Яндекс.Почта (IMAP), Google Calendar OAuth, голос / ASR. Google Drive — заготовка.
+          Яндекс.Почта (IMAP), Google Calendar + Drive (общий OAuth), голос / ASR.
         </p>
       </div>
 

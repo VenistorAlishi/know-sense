@@ -10,9 +10,7 @@ export async function syncStub(id: ConnectorId): Promise<SyncJobResult> {
     status: "error",
     imported: 0,
     skipped: 0,
-    errors: [
-      "Google Drive: каркас готов. Нужен folder picker + Docs export (следующий срез).",
-    ],
+    errors: [`Connector ${id} is not implemented.`],
     startedAt,
     finishedAt,
     detail: "stub",
